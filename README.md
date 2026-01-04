@@ -186,18 +186,19 @@ api_doc.html
 
 欢迎有兴趣的开发者一起补完。
 
-### 🔧 接口计划
+ReadMe文档中的Todo不再添加新内容，因为泰国麻烦，新的Todo可以前往[https://todo.mrgeda.top/](https://todo.mrgeda.top/)查看
 
-- [ ] **用户勋章接口**
+- [x] **用户勋章接口**
   - `user_medal_list`：获取用户已拥有的勋章
   - `medal_list`：勋章基础信息（名称、图标、说明）
   > 在做了在做了
+  - `medal_wear` / `medal_unwear`：佩戴 / 取消佩戴勋章  
 
 - [ ] **用户收藏接口**
   - `favorite_list`：获取用户收藏的帖子列表
   - `favorite_add`：收藏指定主题
   - `favorite_remove`：取消收藏  
-  > 做完勋章就做这个
+  > 在做了
 
 - [ ] **点赞 / 支持接口**
   - `thread_like`
@@ -208,11 +209,6 @@ api_doc.html
   - `attachment_info`
   - `attachment_download_token`  
   > 防止附件被直接扒走，顺便减少站长血压波动
-
-- [ ] **用户在线状态接口**
-  - `user_online_status`
-  - `online_user_list`  
-  > 当前进度：新建文件夹
 
 - [ ] **用户等级接口**
   - `user_level_info`：当前等级与头衔

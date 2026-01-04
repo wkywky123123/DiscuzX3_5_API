@@ -321,6 +321,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <li><a href="#userinfo">个人资料/积分 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#update_profile">修改个人资料 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#upload_avatar">修改用户头像  <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#user_medal_list">获取用户勋章 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#medal_list">全站勋章列表 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#my_threads">用户帖子列表 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#album_list">用户相册列表 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#album_content">相册内容详情 <span class="badge bg-new">新增</span></a></li>
@@ -335,7 +337,8 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="header-section">
         <h1>Discuz! API Plugin 接口文档</h1>
         <p>版本: 2.3 | 最后更新: 2026-1-4 | 基准地址: <code>http://你的域名/plugin.php</code></p>
-        <p>更新仓库：<code><a href="https://github.com/wkywky123123/DiscuzX3_5_API/" target="_blank">https://github.com/wkywky123123/DiscuzX3_5_API/</a></code></p>
+        <p>查看进度：<code><a href="https://todo.mrgeda.top/">https://todo.mrgeda.top/</a></code></p>
+        <p>项目仓库：<code><a href="https://github.com/wkywky123123/DiscuzX3_5_API/" target="_blank">https://github.com/wkywky123123/DiscuzX3_5_API/</a></code></p>
     </div>
 
 <!----------基础入门---------->
@@ -4535,6 +4538,153 @@ public class AvatarUploader {
         "uid": 1,
         "avatar_url": "http://你的域名/uc_server/avatar.php?uid=1&size=middle&random=1735468800",
         "processing_lib": "ImageMagick"
+    }
+}</pre>
+        </div>
+    </div>
+</div>
+
+<!-- 获取用户勋章 -->
+<div id="user_medal_list" class="section">
+    <h2>获取用户勋章 <span class="badge bg-upd">修正</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: user_medal_list</h3>
+            <div><span class="method-tag get">GET</span></div>
+        </div>
+        <div class="api-body">
+            <p>查询指定用户当前拥有的所有勋章列表。</p>
+            
+            <div class="endpoint-box">GET /plugin.php?id=codeium_api:api&key=你的API密钥&action=user_medal_list&uid=1</div>
+
+            <h4>请求参数</h4>
+            <table class="params-table">
+                <thead><tr><th>参数</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>目标用户的 UID。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 密钥。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>调用示例</h4>
+            <div class="code-container">
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式：</div>
+                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=user_medal_list&uid=1"</pre>
+                
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式：</div>
+                <pre>
+OkHttpClient client = new OkHttpClient().newBuilder().build();
+Request request = new Request.Builder()
+    .url("http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=user_medal_list&uid=1")
+    .build();
+Response response = client.newCall(request).execute();</pre>
+            </div>
+
+            <h4>返回字段说明</h4>
+            <table>
+                <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>uid</td><td>Int</td><td>查询的用户 UID</td></tr>
+                    <tr><td>total</td><td>Int</td><td>拥有的勋章总数</td></tr>
+                    <tr><td>list</td><td>Array</td><td>勋章列表</td></tr>
+                    <tr><td>medalid</td><td>String</td><td>勋章 ID</td></tr>
+                    <tr><td>name</td><td>String</td><td>勋章名称</td></tr>
+                    <tr><td>image</td><td>String</td><td>勋章图片链接</td></tr>
+                    <tr><td>description</td><td>String</td><td>勋章描述</td></tr>
+                </tbody>
+            </table>
+
+            <h4>成功响应示例</h4>
+            <pre>
+{
+    "code": 0,
+    "message": "Success",
+    "data": {
+        "uid": 1,
+        "total": 2,
+        "list": [
+            {
+                "medalid": "3",
+                "name": "突出贡献",
+                "image": "http://域名/static/image/common/medal3.gif",
+                "description": "为论坛做出杰出贡献",
+                "status": "active"
+            }
+        ]
+    }
+}</pre>
+        </div>
+    </div>
+</div>
+
+<!-- 全站勋章列表 -->
+<div id="medal_list" class="section">
+    <h2>全站勋章列表 <span class="badge bg-new">配置信息</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: medal_list</h3>
+            <div><span class="method-tag get">GET</span></div>
+        </div>
+        <div class="api-body">
+            <p>获取论坛所有已启用（Available）的勋章基础信息，包含勋章名称、图片链接及描述。</p>
+            
+            <div class="endpoint-box">GET /plugin.php?id=codeium_api:api&key=你的API密钥&action=medal_list</div>
+
+            <h4>1. 请求参数</h4>
+            <table class="params-table">
+                <thead><tr><th>参数</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>action</td><td>String</td><td><span class="required">是</span></td><td>固定值：<code>medal_list</code></td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 密钥。</td></tr>
+                </tbody>
+            </table>
+
+            <div class="note">
+                <strong>🖼️ 图片说明：</strong><br>
+                返回的 <code>image</code> 为绝对路径，通常指向服务器的 <code>static/image/common/</code> 目录，可直接用于 App 渲染。
+            </div>
+
+            <h4>2. 调用示例</h4>
+            <div class="code-container">
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式：</div>
+                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=medal_list"</pre>
+                
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式：</div>
+                <pre>
+OkHttpClient client = new OkHttpClient().newBuilder().build();
+Request request = new Request.Builder()
+    .url("http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=medal_list")
+    .build();
+Response response = client.newCall(request).execute();</pre>
+            </div>
+            
+            <h4>3. 返回字段说明</h4>
+            <table>
+                <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>total</td><td>Int</td><td>全站启用的勋章总数</td></tr>
+                    <tr><td>list</td><td>Array</td><td>勋章信息列表</td></tr>
+                    <tr><td>name</td><td>String</td><td>勋章名称</td></tr>
+                    <tr><td>image</td><td>String</td><td>勋章图片 URL</td></tr>
+                    <tr><td>description</td><td>String</td><td>勋章获取条件或描述</td></tr>
+                </tbody>
+            </table>
+
+            <h4>4. 成功响应示例</h4>
+            <pre>
+{
+    "code": 0,
+    "message": "Success",
+    "data": {
+        "total": 12,
+        "list": [
+            {
+                "medalid": "1",
+                "name": "活跃新人",
+                "image": "http://域名/static/image/common/medal1.gif",
+                "description": "注册满30天且发帖数大于50"
+            }
+        ]
     }
 }</pre>
         </div>
