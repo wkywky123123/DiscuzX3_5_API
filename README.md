@@ -191,7 +191,6 @@ api_doc.html
 - [ ] **用户勋章接口**
   - `user_medal_list`：获取用户已拥有的勋章
   - `medal_list`：勋章基础信息（名称、图标、说明）
-  - `medal_wear` / `medal_unwear`：佩戴 / 取消佩戴勋章  
   > 在做了在做了
 
 - [ ] **用户收藏接口**
