@@ -192,7 +192,6 @@ ReadMe文档中的Todo不再添加新内容，因为太过麻烦，新的Todo可
   - `user_medal_list`：获取用户已拥有的勋章
   - `medal_list`：勋章基础信息（名称、图标、说明）
   > 在做了在做了
-  - `medal_wear` / `medal_unwear`：佩戴 / 取消佩戴勋章  
 
 - [ ] **用户收藏接口**
   - `favorite_list`：获取用户收藏的帖子列表
