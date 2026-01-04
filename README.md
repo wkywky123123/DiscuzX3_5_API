@@ -186,7 +186,7 @@ api_doc.html
 
 欢迎有兴趣的开发者一起补完。
 
-ReadMe文档中的Todo不再添加新内容，因为泰国麻烦，新的Todo可以前往[https://todo.mrgeda.top/](https://todo.mrgeda.top/)查看
+ReadMe文档中的Todo不再添加新内容，因为太过麻烦，新的Todo可以前往[https://todo.mrgeda.top/](https://todo.mrgeda.top/)查看
 
 - [x] **用户勋章接口**
   - `user_medal_list`：获取用户已拥有的勋章
