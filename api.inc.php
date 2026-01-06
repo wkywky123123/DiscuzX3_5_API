@@ -857,16 +857,19 @@ if ($action == 'login') {
     
     
     } elseif ($action == 'thread_content') {
-    // --- 帖子详情接口 (修复投票图片丢失问题) ---
+    // --- 完整增强版：帖子详情接口 (含全类型支持 + 互动状态查询) ---
 
     $tid = isset($_REQUEST['tid']) ? intval($_REQUEST['tid']) : 0;
+    $uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0; // 接收当前登录用户 UID
+    
     if(!$tid) api_return(-3, 'Thread ID (tid) is required');
 
-    // 0. [关键] 加载系统设置，确保远程附件/FTP配置可用
+    // 0. 加载系统设置
     loadcache('setting'); 
 
-    // 1. 查询基础信息
+    // 1. 查询基础信息 (补充查询统计字段: recommend_add, favtimes)
     $sql = "SELECT t.tid, t.fid, t.subject, t.author, t.authorid, t.dateline, t.views, t.replies, t.special, t.price,
+                   t.recommends, t.recommend_add, t.favtimes,
                    p.pid, p.message 
             FROM " . DB::table('forum_thread') . " t 
             LEFT JOIN " . DB::table('forum_post') . " p ON p.tid = t.tid AND p.first = 1 
@@ -875,17 +878,34 @@ if ($action == 'login') {
     $thread = DB::fetch_first($sql, array($tid));
     if(!$thread) api_return(-8, 'Thread not found');
 
+    // 2. [核心新增] 获取当前用户的互动状态
+    $user_interaction = array(
+        'is_liked' => 0,
+        'is_favorited' => 0,
+        'is_rated' => 0
+    );
+
+    if ($uid > 0) {
+        // A. 检查点赞 (推荐记录)
+        $user_interaction['is_liked'] = DB::result_first("SELECT count(*) FROM ".DB::table('forum_memberrecommend')." WHERE tid=%d AND recommenduid=%d", array($tid, $uid)) ? 1 : 0;
+
+        // B. 检查收藏状态 (idtype 为 tid)
+        $user_interaction['is_favorited'] = DB::result_first("SELECT count(*) FROM ".DB::table('home_favorite')." WHERE uid=%d AND id=%d AND idtype='tid'", array($uid, $tid)) ? 1 : 0;
+
+        // C. 检查评分状态 (根据此 PID 查询评分日志)
+        $user_interaction['is_rated'] = DB::result_first("SELECT count(*) FROM ".DB::table('forum_ratelog')." WHERE uid=%d AND pid=%d", array($uid, $thread['pid'])) ? 1 : 0;
+    }
+
     C::t('forum_thread')->increase($tid, array('views' => 1));
 
     $special_info = array();
     $special_type = intval($thread['special']);
 
-    // 2. 特殊主题处理
+    // 3. 特殊主题逻辑 (完整保留并优化)
     if ($special_type == 1) { 
         // --- 投票贴 (Poll) ---
         $poll = C::t('forum_poll')->fetch($tid);
         if($poll) {
-            // A. 获取投票图片映射 (增强版)
             $poll_imgs = array();
             $query_img = DB::query("SELECT poid, aid FROM ".DB::table('forum_polloption_image')." WHERE tid=$tid");
             while($img = DB::fetch($query_img)) {
@@ -900,32 +920,22 @@ if ($action == 'login') {
                 'options' => array()
             );
 
-            // B. 获取选项详情
             $query = DB::query("SELECT * FROM ".DB::table('forum_polloption')." WHERE tid=$tid ORDER BY displayorder");
             while($opt = DB::fetch($query)) {
-                // 解析选项图片 (逻辑优化)
                 $option_image_url = '';
                 if(isset($poll_imgs[$opt['polloptionid']])) {
                     $aid = intval($poll_imgs[$opt['polloptionid']]);
                     if($aid > 0) {
-                        // 1. 尝试从索引表获取 tableid
                         $tableid = 127; 
                         $att = C::t('forum_attachment')->fetch($aid);
-                        if($att) {
-                            $tableid = $att['tableid'];
-                        } else {
-                            // 2. 索引表缺失时的回退策略：根据 aid 猜测分表 (0-9)
-                            $tableid = intval($aid) % 10;
-                        }
+                        if($att) $tableid = $att['tableid']; else $tableid = intval($aid) % 10;
                         
-                        // 3. 从具体分表读取数据
                         $att_n = C::t('forum_attachment_n')->fetch($tableid, $aid);
                         if($att_n) {
                             $option_image_url = ($att_n['remote'] ? $_G['setting']['ftp']['attachurl'] : $_G['siteurl'].'data/attachment/').'forum/'.$att_n['attachment'];
                         }
                     }
                 }
-
                 $special_info['options'][] = array(
                     'polloptionid' => $opt['polloptionid'],
                     'polloption' => $opt['polloption'],
@@ -945,14 +955,13 @@ if ($action == 'login') {
                 $aid = $activity['aid'];
                 $tableid = 127;
                 $att = C::t('forum_attachment')->fetch($aid);
-                if($att) $tableid = $att['tableid']; else $tableid = intval($aid) % 10; // 同样应用回退策略
+                if($att) $tableid = $att['tableid']; else $tableid = intval($aid) % 10;
 
                 $att_n = C::t('forum_attachment_n')->fetch($tableid, $aid);
                 if($att_n) {
                     $activity_cover = ($att_n['remote'] ? $_G['setting']['ftp']['attachurl'] : $_G['siteurl'].'data/attachment/').'forum/'.$att_n['attachment'];
                 }
             }
-
             $special_info = array(
                 'starttimefrom' => dgmdate($activity['starttimefrom']),
                 'starttimeto' => $activity['starttimeto'] ? dgmdate($activity['starttimeto']) : '',
@@ -998,9 +1007,10 @@ if ($action == 'login') {
         }
     }
 
-    // 3. 构建返回
+    // 4. 构建返回
     $data = array(
         'tid' => $thread['tid'],
+        'pid' => $thread['pid'],
         'subject' => $thread['subject'],
         'author' => $thread['author'],
         'authorid' => $thread['authorid'],
@@ -1008,6 +1018,14 @@ if ($action == 'login') {
         'dateline' => dgmdate($thread['dateline'], 'u'),
         'views' => $thread['views'] + 1,
         'replies' => $thread['replies'],
+        
+        // [统计数据]
+        'recommend_add' => intval($thread['recommend_add']),
+        'favtimes' => intval($thread['favtimes']),
+        
+        // [用户互动状态]
+        'user_interaction' => $user_interaction, 
+
         'special_type' => $special_type,
         'special_info' => $special_info,
         'content' => parse_attach_images($thread['message'])
@@ -1866,22 +1884,41 @@ if ($action == 'login') {
     
     
     
+    
+    
     } elseif ($action == 'thread_list') {
-    // --- 帖子列表接口 (含图片预览、智能摘要、特殊主题类型) ---
+    // --- 升级版：帖子列表接口 (含版块收藏总数及当前用户收藏状态) ---
 
     // 1. 接收参数
     $fid = isset($_REQUEST['fid']) ? intval($_REQUEST['fid']) : 0;
+    $uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0; // [新增] 接收当前用户 UID
     $page = isset($_REQUEST['page']) ? max(1, intval($_REQUEST['page'])) : 1;
     $perpage = isset($_REQUEST['perpage']) ? max(1, min(50, intval($_REQUEST['perpage']))) : 20;
     $orderby = isset($_REQUEST['orderby']) ? $_REQUEST['orderby'] : 'lastpost';
     
-    // 2. 构建查询条件
-    $where = "t.displayorder >= 0"; // 排除回收站
+    // 2. [核心功能] 如果指定了 FID，则获取版块的收藏统计信息
+    $forum_fav_info = array(
+        'favorite_count' => 0, // 版块总收藏数
+        'is_favorite' => 0     // 当前用户是否已收藏
+    );
+
+    if ($fid > 0) {
+        // A. 查询版块被收藏的总次数 (idtype='fid')
+        $forum_fav_info['favorite_count'] = DB::result_first("SELECT COUNT(*) FROM ".DB::table('home_favorite')." WHERE id=%d AND idtype='fid'", array($fid));
+
+        // B. 如果传入了 UID，检查该用户是否收藏了该版块
+        if ($uid > 0) {
+            $forum_fav_info['is_favorite'] = DB::result_first("SELECT COUNT(*) FROM ".DB::table('home_favorite')." WHERE uid=%d AND id=%d AND idtype='fid'", array($uid, $fid)) ? 1 : 0;
+        }
+    }
+
+    // 3. 构建帖子查询条件
+    $where = "t.displayorder >= 0"; 
     if($fid) {
         $where .= " AND t.fid=" . $fid;
     }
 
-    // 3. 排序校验
+    // 排序校验
     $allow_sort = array('dateline', 'replies', 'views', 'lastpost');
     if(!in_array($orderby, $allow_sort)) $orderby = 'lastpost';
 
@@ -1893,7 +1930,6 @@ if ($action == 'login') {
     $list = array();
     if($total > 0) {
         // 5. 联表查询
-        // [新增] t.special 字段
         $sql = "SELECT t.tid, t.fid, t.subject, t.author, t.authorid, t.dateline, t.views, t.replies, 
                        t.digest, t.attachment, t.special,
                        p.message 
@@ -1932,8 +1968,7 @@ if ($action == 'login') {
                 'dateline' => dgmdate($row['dateline'], 'u'),
                 'views' => $row['views'],
                 'replies' => $row['replies'],
-                // [新增] 特殊主题标识
-                'special_type' => intval($row['special']), // 0普通, 1投票, 2商品, 3悬赏, 4活动, 5辩论
+                'special_type' => intval($row['special']),
                 'is_digest' => intval($row['digest']) > 0 ? 1 : 0,
                 'image_list' => $image_list, 
                 'has_image' => !empty($image_list) ? 1 : 0
@@ -1941,12 +1976,19 @@ if ($action == 'login') {
         }
     }
 
+    // 6. 返回结果 (合并版块统计信息)
     api_return(0, 'Success', array(
+        'forum_fav_info' => $forum_fav_info, // [新增] 当前版块的收藏状态与统计
         'total' => intval($total),
         'page' => $page,
         'perpage' => $perpage,
         'list' => $list
     ));
+    
+    
+    
+    
+    
     
     
     } elseif ($action == 'poll_vote') {
@@ -2766,6 +2808,365 @@ if ($action == 'login') {
         'total' => count($list),
         'list' => $list
     ));
+    
+    
+    
+    
+    
+    
+    
+} elseif ($action == 'favorite_forum') {
+    // --- 收藏/取消收藏 版块 ---
+    
+    // 1. 接收参数
+    $uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0;
+    $fid = isset($_REQUEST['fid']) ? intval($_REQUEST['fid']) : 0;
+    $do = isset($_REQUEST['do']) ? trim($_REQUEST['do']) : 'add'; // add=收藏, del=取消
+
+    // 2. 基础校验
+    if(!$uid || !$fid) {
+        api_return(-3, 'UID and FID are required');
+    }
+
+    // 3. 检查版块是否存在且状态正常
+    $forum = C::t('forum_forum')->fetch($fid);
+    if(!$forum || $forum['status'] != 1) {
+        api_return(-7, 'Forum invalid or closed');
+    }
+
+    // 4. 检查是否已收藏
+    // idtype='fid' 代表版块收藏
+    $fav = C::t('home_favorite')->fetch_by_id_idtype($fid, 'fid', $uid);
+
+    if($do == 'add') {
+        // --- 执行收藏 ---
+        if($fav) {
+            api_return(-15, 'Already favorite');
+        }
+        
+        $data = array(
+            'uid' => $uid,
+            'id' => $fid,
+            'idtype' => 'fid',
+            'spaceuid' => 0,
+            'title' => $forum['name'], // 缓存版块名称
+            'description' => '',
+            'dateline' => TIMESTAMP
+        );
+        C::t('home_favorite')->insert($data);
+        
+        // 注：Discuz 默认通常不统计版块的被收藏数，如果你的站点有此需求需额外处理
+        
+        api_return(0, 'Forum favorite added');
+
+    } else {
+        // --- 执行取消 ---
+        if($fav) {
+            C::t('home_favorite')->delete($fav['favid']);
+        }
+        // 即使原本没收藏，执行删除也返回成功（幂等性）
+        api_return(0, 'Forum favorite removed');
+    }
+    
+    
+    
+    
+    
+    
+    
+} elseif ($action == 'favorite_thread') {
+    // --- 收藏/取消收藏 帖子 ---
+    
+    // 1. 接收参数
+    $uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0;
+    $tid = isset($_REQUEST['tid']) ? intval($_REQUEST['tid']) : 0;
+    $do = isset($_REQUEST['do']) ? trim($_REQUEST['do']) : 'add'; // add=收藏, del=取消
+
+    // 2. 基础校验
+    if(!$uid || !$tid) {
+        api_return(-3, 'UID and TID are required');
+    }
+
+    // 3. 检查帖子是否存在
+    // 同时也排除回收站中的帖子 (displayorder < 0)
+    $thread = C::t('forum_thread')->fetch($tid);
+    if(!$thread || $thread['displayorder'] < 0) {
+        api_return(-8, 'Thread not found or deleted');
+    }
+
+    // 4. 检查是否已收藏
+    // idtype='tid' 代表帖子收藏
+    $fav = C::t('home_favorite')->fetch_by_id_idtype($tid, 'tid', $uid);
+
+    if($do == 'add') {
+        // --- 执行收藏 ---
+        if($fav) {
+            api_return(-15, 'Already favorite');
+        }
+        
+        $data = array(
+            'uid' => $uid,
+            'id' => $tid,
+            'idtype' => 'tid',
+            'spaceuid' => 0, // 帖子收藏不需要指定空间UID
+            'title' => $thread['subject'], // 缓存帖子标题
+            'description' => '',
+            'dateline' => TIMESTAMP
+        );
+        C::t('home_favorite')->insert($data);
+        
+        // [关键] 增加帖子的被收藏次数 (favtimes + 1)
+        C::t('forum_thread')->increase($tid, array('favtimes' => 1));
+        
+        api_return(0, 'Favorite added');
+
+    } else {
+        // --- 执行取消 ---
+        if($fav) {
+            C::t('home_favorite')->delete($fav['favid']);
+            
+            // [关键] 减少帖子的被收藏次数 (favtimes - 1)
+            // 只有真正删除了收藏记录才减，防止重复调用导致负数风险
+            C::t('forum_thread')->increase($tid, array('favtimes' => -1));
+        }
+        api_return(0, 'Favorite removed');
+    }
+    
+    
+    
+    
+    
+    
+    
+} elseif ($action == 'favorite_list') {
+    // --- 获取用户收藏列表 (支持类型筛选) ---
+    
+    // 1. 接收参数
+    $uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0;
+    $type = isset($_REQUEST['type']) ? trim($_REQUEST['type']) : 'all'; // 可选: all, thread, forum
+    $page = isset($_REQUEST['page']) ? max(1, intval($_REQUEST['page'])) : 1;
+    $perpage = isset($_REQUEST['perpage']) ? max(1, min(50, intval($_REQUEST['perpage']))) : 20;
+
+    if(!$uid) {
+        api_return(-3, 'UID is required');
+    }
+
+    // 2. 构建查询条件
+    $where_arr = array("uid=%d");
+    $params = array($uid);
+
+    // 筛选逻辑映射：API参数 -> 数据库字段值
+    if($type == 'thread') {
+        $where_arr[] = "idtype='tid'";
+    } elseif($type == 'forum') {
+        $where_arr[] = "idtype='fid'";
+    }
+    // Discuz 收藏夹还可能包含日志(blogid)、相册(albumid)等，默认为 'all' 时不加限制
+
+    $where_sql = implode(' AND ', $where_arr);
+    $start = ($page - 1) * $perpage;
+
+    // 3. 统计总数
+    $total = DB::result_first("SELECT COUNT(*) FROM ".DB::table('home_favorite')." WHERE $where_sql", $params);
+
+    $list = array();
+    if($total > 0) {
+        // 4. 查询数据
+        // 注意：title 是收藏时的快照标题
+        $sql = "SELECT favid, id, idtype, title, description, dateline 
+                FROM ".DB::table('home_favorite')." 
+                WHERE $where_sql 
+                ORDER BY dateline DESC 
+                LIMIT $start, $perpage";
+        
+        $query = DB::query($sql, $params);
+        while($row = DB::fetch($query)) {
+            // 格式化 idtype 为前端更易读的字符串
+            $type_name = 'unknown';
+            if($row['idtype'] == 'tid') $type_name = 'thread';
+            elseif($row['idtype'] == 'fid') $type_name = 'forum';
+            elseif($row['idtype'] == 'blogid') $type_name = 'blog';
+            elseif($row['idtype'] == 'albumid') $type_name = 'album';
+
+            $list[] = array(
+                'favid' => $row['favid'], // 收藏记录唯一ID
+                'id' => $row['id'],       // 对象ID (tid 或 fid)
+                'type' => $type_name,     // thread / forum
+                'title' => $row['title'], // 标题
+                'description' => $row['description'],
+                'dateline' => dgmdate($row['dateline'], 'u')
+            );
+        }
+    }
+
+    api_return(0, 'Success', array(
+        'total' => intval($total),
+        'page' => $page,
+        'perpage' => $perpage,
+        'list' => $list
+    ));
+    
+    
+    
+    
+    
+    
+    
+} elseif ($action == 'post_like') {
+    // --- 优化版：无限次点赞接口 (仅保留权限开关与重复检查) ---
+    
+    $uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0;
+    $tid = isset($_REQUEST['tid']) ? intval($_REQUEST['tid']) : 0;
+    $do = isset($_REQUEST['do']) ? trim($_REQUEST['do']) : 'add'; 
+
+    if(!$uid || !$tid) api_return(-3, 'UID and TID are required');
+
+    $thread = C::t('forum_thread')->fetch($tid);
+    if(!$thread || $thread['displayorder'] < 0) api_return(-8, 'Thread not found');
+
+    // 1. 检查用户组是否有权点赞 (保留此开关，防止垃圾账号刷赞)
+    $member = C::t('common_member')->fetch($uid);
+    $usergroup = C::t('common_usergroup_field')->fetch($member['groupid']);
+    if(!$usergroup['allowrecommend']) {
+        api_return(-9, 'Your usergroup is not allowed to recommend threads');
+    }
+
+    // 2. 检查是否已经点过赞 (针对该贴)
+    $has_liked = DB::result_first("SELECT count(*) FROM ".DB::table('forum_memberrecommend')." WHERE tid=%d AND recommenduid=%d", array($tid, $uid));
+
+    if($do == 'add') {
+        if($has_liked) api_return(-15, 'Already liked this thread');
+
+        // 执行点赞
+        DB::insert('forum_memberrecommend', array(
+            'tid' => $tid, 'recommenduid' => $uid, 'dateline' => TIMESTAMP
+        ));
+
+        // 更新统计：推荐总数+1, 支持数+1, 热度+1
+        C::t('forum_thread')->increase($tid, array(
+            'recommends' => 1, 
+            'recommend_add' => 1,
+            'heats' => 1
+        ));
+
+        // 发送提醒给作者
+        if($thread['authorid'] != $uid) {
+            $user_link = '<a href="home.php?mod=space&uid=' . $uid . '" class="xw1">' . $member['username'] . '</a>';
+            $thread_link = '<a href="forum.php?mod=viewthread&tid=' . $tid . '" class="xw1">' . $thread['subject'] . '</a>';
+            $note = $user_link . ' 赞了您的帖子 ' . $thread_link;
+            notification_add($thread['authorid'], 'recommend', $note, array(), 1);
+        }
+
+        api_return(0, 'Liked successfully', array(
+            'tid' => $tid,
+            'is_liked' => 1,
+            'current_likes' => intval($thread['recommend_add']) + 1
+        ));
+
+    } else {
+        // 取消点赞
+        if(!$has_liked) api_return(-15, 'Not liked yet');
+        
+        DB::query("DELETE FROM ".DB::table('forum_memberrecommend')." WHERE tid=%d AND recommenduid=%d", array($tid, $uid));
+        C::t('forum_thread')->increase($tid, array('recommends' => -1, 'recommend_add' => -1, 'heats' => -1));
+
+        api_return(0, 'Unliked successfully', array(
+            'tid' => $tid,
+            'is_liked' => 0,
+            'current_likes' => max(0, intval($thread['recommend_add']) - 1)
+        ));
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+} elseif ($action == 'post_rate') {
+    // --- 最终完整版：含重复评分检查、强制执行、实时通知 ---
+    
+    $uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0;
+    $pid = isset($_REQUEST['pid']) ? intval($_REQUEST['pid']) : 0;
+    $credit_id = isset($_REQUEST['credit_id']) ? intval($_REQUEST['credit_id']) : 0;
+    $score = isset($_REQUEST['score']) ? intval($_REQUEST['score']) : 0;
+    $reason = isset($_REQUEST['reason']) ? trim($_REQUEST['reason']) : 'API评分';
+
+    if (!$uid || !$pid || !$credit_id || !$score) api_return(-3, 'Missing parameters');
+
+    // 1. 获取帖子和作者
+    $post = DB::fetch_first("SELECT tid, fid, authorid, author FROM ".DB::table('forum_post')." WHERE pid=%d", array($pid));
+    if (!$post) api_return(-8, 'Post not found');
+    
+    // 权限：禁止给自己评分
+    if ($post['authorid'] == $uid) api_return(-9, 'You cannot rate your own post');
+
+    // 2. 【核心新增】检查是否已经评分过
+    // Discuz 逻辑：同一用户对同一 PID 只能评分一次
+    $has_rated = DB::result_first("SELECT COUNT(*) FROM ".DB::table('forum_ratelog')." WHERE pid=%d AND uid=%d", array($pid, $uid));
+    if ($has_rated) {
+        api_return(-15, 'You have already rated this post');
+    }
+
+    // 3. 获取权限和余额
+    $member = C::t('common_member')->fetch($uid);
+    $member_count = C::t('common_member_count')->fetch($uid);
+    $usergroup = C::t('common_usergroup_field')->fetch($member['groupid']);
+    
+    $credit_field = 'extcredits'.$credit_id;
+    $user_balance = isset($member_count[$credit_field]) ? intval($member_count[$credit_field]) : 0;
+
+    // 4. 强制授权逻辑 (针对管理员或异常数据兜底)
+    $raterange = @unserialize($usergroup['raterange']);
+    if ($member['groupid'] == 1 || empty($raterange)) {
+        $conf = array('deduct' => 1, 'min' => -1000, 'max' => 1000, 'daily' => 999999);
+    } else {
+        $conf = isset($raterange[$credit_id]) ? $raterange[$credit_id] : array('min' => -10, 'max' => 10, 'daily' => 100, 'deduct' => 1);
+    }
+
+    // 5. 执行数据库操作 (强制 SQL 驱动)
+    
+    // A. 记录评分日志
+    DB::insert('forum_ratelog', array(
+        'pid' => $pid, 'uid' => $uid, 'username' => $member['username'],
+        'extcredits' => $credit_id, 'score' => $score, 'dateline' => TIMESTAMP, 'reason' => $reason
+    ));
+
+    // B. 更新帖子评分次数
+    DB::query("UPDATE ".DB::table('forum_post')." SET ratetimes=ratetimes+1 WHERE pid=%d", array($pid));
+
+    // C. 给作者加分
+    DB::query("UPDATE ".DB::table('common_member_count')." SET {$credit_field}={$credit_field}+%d WHERE uid=%d", array($score, $post['authorid']));
+
+    // D. 如果扣除自身，给评分人减分
+    if ($conf['deduct']) {
+        DB::query("UPDATE ".DB::table('common_member_count')." SET {$credit_field}={$credit_field}-%d WHERE uid=%d", array(abs($score), $uid));
+    }
+
+    // 6. 发送实时通知
+    require_once libfile('function/home');
+    loadcache('setting');
+    $c_name = $_G['setting']['extcredits'][$credit_id]['title'];
+    $c_unit = $_G['setting']['extcredits'][$credit_id]['unit'];
+    
+    $user_link = '<a href="home.php?mod=space&uid='.$uid.'" class="xw1">'.$member['username'].'</a>';
+    $msg = "{$user_link} 评分了您的帖子，您获得了 [b]".($score > 0 ? '+'.$score : $score)." {$c_unit}{$c_name}[/b]。";
+    if($reason) $msg .= "<br />理由：{$reason}";
+
+    notification_add($post['authorid'], 'system', $msg, array('from_id' => $uid, 'from_idtype' => 'rate'), 1);
+
+    api_return(0, 'Rated successfully', array(
+        'score' => $score,
+        'new_balance' => $user_balance - abs($score)
+    ));
+    
+    
+    
+    
+    
+    
+    
     
     
     

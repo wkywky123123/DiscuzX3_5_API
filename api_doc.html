@@ -112,7 +112,6 @@
     .sidebar a:hover { background: var(--bg-hover); color: var(--primary-color); }
     .sidebar a.active { background: var(--bg-active); color: var(--primary-color); font-weight: 600; }
 
-    /* --- 主内容区修正 --- */
     .main-content { 
         flex: 1; /* 自动占据剩余空间 */
         min-width: 0; /* 极其关键：防止代码块撑破 flex 容器 */
@@ -267,15 +266,15 @@ document.addEventListener('DOMContentLoaded', () => {
             <li><a href="#forum_list">获取版块列表 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#thread_list">帖子列表查询 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#search_threads">高级搜索 <span class="badge bg-new">新增</span></a></li>
-            <li><a href="#thread_content">帖子详情获取 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#thread_content">帖子详情获取 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#poll_vote">参与投票 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#activity_apply">报名活动 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#latest_threads">全站最新动态 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#announcements">站点公告模块 <span class="badge bg-new">新增</span></a></li>
-            <li><a href="#new_thread">发布新主题 <span class="badge bg-new">新增</span></a></li>
-            <li><a href="#new_poll">发布投票贴 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#new_thread">发布新主题 <span class="badge bg-upd">更新</span></a></li>
+            <li><a href="#new_poll">发布投票贴 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#edit_post">编辑/删除帖子 <span class="badge bg-new">新增</span></a></li>
-            <li><a href="#edit_poll">编辑/删除投票贴 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#edit_poll">编辑/删除投票贴 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#upload_image">附件图片上传 <span class="badge bg-new">新增</span></a></li>
         </ul>
     </div>
@@ -284,10 +283,15 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="nav-group-title">互动与社区</div>
         <ul>
             <li><a href="#post_list">回帖列表获取 <span class="badge bg-upd">更新</span></a></li>
-            <li><a href="#post_reply">发表回复/评论</a></li>
+            <li><a href="#post_reply">发表回复/评论<span class="badge bg-upd">更新</span></a></li></a></li>
             <li><a href="#check_unread">全局未读检查 <span class="badge bg-new">新增</span></a></li>
-            <li><a href="#notifications">系统提醒中心 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#notifications">系统提醒中心 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#send_notification">管理发送提醒</a></li>
+            <li><a href="#favorite_forum">收藏/取消 版块 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#favorite_thread">添加/删除收藏帖子 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#favorite_list">用户收藏列表 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#post_like">点赞/支持接口 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#post_rate">帖子评分接口 <span class="badge bg-new">新增</span></a></li>
         </ul>
     </div>
 
@@ -305,8 +309,8 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="nav-group">
         <div class="nav-group-title">私信对聊</div>
         <ul>
-            <li><a href="#message_list">私信会话列表 <span class="badge bg-new">新增</span></a></li>
-            <li><a href="#message_details">私信内容记录 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#message_list">私信会话列表 <span class="badge bg-upd">更新</span></a></li>
+            <li><a href="#message_details">私信内容记录 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#mark_pm_all_read">私信全部已读 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#send_pm">发送私信消息 <span class="badge bg-new">新增</span></a></li>
         </ul>
@@ -323,11 +327,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <li><a href="#upload_avatar">修改用户头像  <span class="badge bg-new">新增</span></a></li>
             <li><a href="#user_medal_list">获取用户勋章 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#medal_list">全站勋章列表 <span class="badge bg-new">新增</span></a></li>
-            <li><a href="#my_threads">用户帖子列表 <span class="badge bg-new">新增</span></a></li>
-            <li><a href="#album_list">用户相册列表 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#my_threads">用户帖子列表 <span class="badge bg-upd">更新</span></a></li>
+            <li><a href="#album_list">用户相册列表 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#album_content">相册内容详情 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#upload_album_pic">上传图片到相册 <span class="badge bg-new">新增</span></a></li>
-            <li><a href="#user_list">全站用户搜索 <span class="badge bg-upd">更新</span></a></li>
+            <li><a href="#user_list">全站用户搜索</a></li>
             <li><a href="#credit">积分变更操作</a></li>
         </ul>
     </div>
@@ -336,8 +340,8 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="main-content">
     <div class="header-section">
         <h1>Discuz! API Plugin 接口文档</h1>
-        <p>版本: 2.3 | 最后更新: 2026-1-4 | 基准地址: <code>http://你的域名/plugin.php</code></p>
-        <p>查看进度：<code><a href="https://todo.mrgeda.top/">https://todo.mrgeda.top/</a></code></p>
+        <p>版本: 2.5 | 最后更新: 2026-1-6 | 基准地址: <code>http://你的域名/plugin.php</code></p>
+        <p>实时进度：<code><a href="https://todo.mrgeda.top/">https://todo.mrgeda.top/</a></code></p>
         <p>项目仓库：<code><a href="https://github.com/wkywky123123/DiscuzX3_5_API/" target="_blank">https://github.com/wkywky123123/DiscuzX3_5_API/</a></code></p>
     </div>
 
@@ -370,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <pre>
 OkHttpClient client = new OkHttpClient().newBuilder().build();
 Request request = new Request.Builder()
-  .url("http://你的域名/plugin.php?id=codeium_api:api&key=YOUR_你的API密钥&action=...")
+  .url("http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=...")
   .method("GET", null)
   .build();
 Response response = client.newCall(request).execute();</pre>
@@ -537,18 +541,19 @@ public class ForumListLoader {
     </div>
 </div>
 
-<!--  帖子列表查询 -->
+<!-- 帖子列表查询 -->
 <div id="thread_list" class="section">
-    <h2>帖子列表查询 <span class="badge bg-upd">摘要模式</span></h2>
+    <h2>帖子列表查询 <span class="badge bg-upd">增加版块统计</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: thread_list</h3>
             <div><span class="method-tag get">GET</span></div>
         </div>
         <div class="api-body">
-            <p>获取指定版块的主题列表。支持分页加载、关键词搜索、按作者筛选以及多种排序方式（最后回复、发帖时间、回复数、阅读数）。</p>
+            <p>获取指定版块的主题列表。支持分页、搜索及多种排序方式。</p>
+            <p><strong>新增特性：</strong>当指定了 <code>fid</code> 并传入 <code>uid</code> 时，接口会额外返回该版块的收藏总数以及当前用户的关注状态，用于 App 版块页顶部的“关注”功能实现。</p>
             
-            <div class="endpoint-box">GET /plugin.php?id=codeium_api:api&key=你的API密钥&action=thread_list&fid={fid}&page={page}</div>
+            <div class="endpoint-box">GET /plugin.php?id=codeium_api:api&key=你的API密钥&action=thread_list&fid={fid}&uid={uid}</div>
 
             <h4>1. 请求参数</h4>
             <table>
@@ -565,7 +570,13 @@ public class ForumListLoader {
                         <td>fid</td>
                         <td>Int</td>
                         <td><span class="optional">否</span></td>
-                        <td>版块 ID。不传则返回全站所有版块的混合列表。</td>
+                        <td>版块 ID。不传则返回全站混合列表且不返回版块统计信息。</td>
+                    </tr>
+                    <tr>
+                        <td>uid</td>
+                        <td>Int</td>
+                        <td><span class="optional">否</span></td>
+                        <td>当前登录用户 UID。<strong>传入此值才能获取“是否已收藏”状态。</strong></td>
                     </tr>
                     <tr>
                         <td>page</td>
@@ -577,19 +588,13 @@ public class ForumListLoader {
                         <td>perpage</td>
                         <td>Int</td>
                         <td><span class="optional">否</span></td>
-                        <td>每页数量，默认 <code>20</code>，最大限制 <code>100</code>。</td>
-                    </tr>
-                    <tr>
-                        <td>search</td>
-                        <td>String</td>
-                        <td><span class="optional">否</span></td>
-                        <td>搜索关键词。支持对标题和内容进行模糊匹配。</td>
+                        <td>每页数量，默认 <code>20</code>。</td>
                     </tr>
                     <tr>
                         <td>orderby</td>
                         <td>String</td>
                         <td><span class="optional">否</span></td>
-                        <td>排序字段：<code>lastpost</code> (默认), <code>dateline</code> (发帖), <code>replies</code> (回复), <code>views</code> (阅读)</td>
+                        <td>排序字段：<code>lastpost</code>, <code>dateline</code>, <code>replies</code>, <code>views</code>。</td>
                     </tr>
                     <tr>
                         <td>key</td>
@@ -601,16 +606,17 @@ public class ForumListLoader {
             </table>
 
             <div class="note">
-                <strong>📝 内容摘要说明：</strong><br>
-                1. <strong>字段缩减：</strong> <code>content</code> 字段仅包含 200 字纯文本摘要，已过滤所有 BBCode 标签、图片链接和 HTML 标签。<br>
-                2. <strong>获取全文：</strong> 如果用户点击该帖子，请通过返回的 <code>tid</code> 调用 <a href="#thread_content">thread_content</a> 接口获取含图片的完整正文。
+                <strong>📌 版块头部交互说明：</strong><br>
+                1. <strong>数据依赖：</strong> 仅在传入 <code>fid</code> 参数时，返回结果才会包含 <code>forum_fav_info</code> 对象。<br>
+                2. <strong>favorite_count:</strong> 统计了该版块被多少人收藏，可用于显示“1.5k 人关注”。<br>
+                3. <strong>is_favorite:</strong> 若为 1，App 顶部按钮应显示“已关注”；若为 0，则显示“关注”。
             </div>
 
             <h4>2. 调用示例</h4>
             <div class="code-container">
                 <!-- Curl 示例 -->
                 <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式：</div>
-                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=thread_list&fid=2&page=1&orderby=dateline"</pre>
+                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=thread_list&fid=2&uid=1&page=1"</pre>
                 
                 <!-- Java 示例 -->
                 <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式：</div>
@@ -624,19 +630,17 @@ public class ThreadListFetcher {
     public static void main(String[] args) throws Exception {
         OkHttpClient client = new OkHttpClient();
 
-        // 使用 HttpUrl.Builder 安全地构建带参数的 URL
+        // 构造带参数的 URL，包含 uid 以获取收藏状态
         HttpUrl url = HttpUrl.parse("http://你的域名/plugin.php").newBuilder()
                 .addQueryParameter("id", "codeium_api:api")
                 .addQueryParameter("key", "你的API密钥")
                 .addQueryParameter("action", "thread_list")
-                .addQueryParameter("fid", "2")      // 目标版块ID
-                .addQueryParameter("page", "1")     // 页码
-                .addQueryParameter("orderby", "dateline") // 按发帖时间排序
+                .addQueryParameter("fid", "2")
+                .addQueryParameter("uid", "1") // 传入当前用户UID
+                .addQueryParameter("page", "1")
                 .build();
 
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
+        Request request = new Request.Builder().url(url).build();
 
         try (Response response = client.newCall(request).execute()) {
             if (response.isSuccessful()) {
@@ -651,12 +655,12 @@ public class ThreadListFetcher {
             <table>
                 <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
                 <tbody>
-                    <tr><td>total</td><td>Int</td><td>主题总数</td></tr>
-                    <tr><td>list</td><td>Array</td><td>主题列表</td></tr>
-                    <tr><td>abstract</td><td>String</td><td>纯文本内容摘要</td></tr>
-                    <tr><td>image_list</td><td>Array</td><td>图片预览列表（前9张）</td></tr>
-                    <tr><td><b>special_type</b></td><td>Int</td><td><b>主题类型：</b><code>0</code>普通, <code>1</code>投票, <code>2</code>商品, <code>3</code>悬赏, <code>4</code>活动, <code>5</code>辩论</td></tr>
-                    <tr><td>has_image</td><td>Int</td><td>是否有图：<code>1</code> 有，<code>0</code> 无</td></tr>
+                    <tr><td><b>forum_fav_info</b></td><td>Object</td><td><b>当前版块的互动信息对象：</b></td></tr>
+                    <tr><td>favorite_count</td><td>Int</td><td>该版块被收藏（关注）的总人数。</td></tr>
+                    <tr><td>is_favorite</td><td>Int</td><td>当前登录用户是否已关注该版块：1=是，0=否。</td></tr>
+                    <tr><td>total</td><td>Int</td><td>帖子总条数。</td></tr>
+                    <tr><td>list</td><td>Array</td><td>主题列表数组。</td></tr>
+                    <tr><td>abstract</td><td>String</td><td>纯文本内容摘要。</td></tr>
                 </tbody>
             </table>
 
@@ -666,6 +670,10 @@ public class ThreadListFetcher {
     "code": 0,
     "message": "Success",
     "data": {
+        "forum_fav_info": {
+            "favorite_count": 128,
+            "is_favorite": 1
+        },
         "total": 50,
         "page": 1,
         "perpage": 20,
@@ -675,7 +683,7 @@ public class ThreadListFetcher {
                 "fid": "2",
                 "forum_name": "摄影交流",
                 "subject": "周末去公园拍的风景",
-                "abstract": "今天天气真不错，带上相机去公园转了一圈，空气很好...",
+                "abstract": "今天天气真不错，带上相机去公园转了一圈...",
                 "author": "摄影师小王",
                 "authorid": "105",
                 "avatar": "http://你的域名/uc_server/avatar.php?uid=105&size=small",
@@ -685,27 +693,9 @@ public class ThreadListFetcher {
                 "special_type": 0,
                 "is_digest": 0,
                 "image_list": [
-                    "http://你的域名/data/attachment/forum/2025/01/pic1.jpg",
-                    "http://你的域名/data/attachment/forum/2025/01/pic2.jpg"
+                    "http://你的域名/data/attachment/forum/2025/01/pic1.jpg"
                 ],
                 "has_image": 1
-            },
-            {
-                "tid": "10089",
-                "fid": "5",
-                "forum_name": "站务管理",
-                "subject": "关于下周举办活动的投票",
-                "abstract": "大家希望下周举办什么类型的活动？请参与投票...",
-                "author": "admin",
-                "authorid": "1",
-                "avatar": "http://你的域名/uc_server/avatar.php?uid=1&size=small",
-                "dateline": "1小时前",
-                "views": "560",
-                "replies": "23",
-                "special_type": 1, 
-                "is_digest": 1,
-                "image_list": [],
-                "has_image": 0
             }
         ]
     }
@@ -787,11 +777,11 @@ public class ThreadListFetcher {
                 "subject": "带图的 API 开发教程",
                 "abstract": "...我们今天重点讲一下 <b>API</b> 中的图片处理...",
                 "author": "admin",
-                "avatar": "http://域名/uc_server/avatar.php?uid=1&size=small",
+                "avatar": "http://你的域名/uc_server/avatar.php?uid=1&size=small",
                 "dateline": "1小时前",
                 "special_type": 0,
                 "image_list": [
-                    "http://域名/data/attachment/forum/2025/doc.jpg"
+                    "http://你的域名/data/attachment/forum/2025/doc.jpg"
                 ],
                 "has_image": 1
             }
@@ -806,179 +796,95 @@ public class ThreadListFetcher {
 
 <!-- 帖子详情获取 -->
 <div id="thread_content" class="section">
-    <h2>帖子详情获取 <span class="badge bg-upd">支持特殊主题</span></h2>
+    <h2>帖子详情获取 <span class="badge bg-upd">增加互动状态</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: thread_content</h3>
             <div><span class="method-tag get">GET</span></div>
         </div>
         <div class="api-body">
-            <p>获取主题的完整详情。除了返回经过 HTML 解析的图文正文外，该接口现已支持返回<b>投票</b>、<b>活动</b>、<b>悬赏</b>、<b>商品</b>等特殊主题的结构化数据。</p>
+            <p>获取主题的完整详情。接口会自动解析正文中的图片附件，返回帖子统计数据，并支持针对特定用户（传入 <code>uid</code>）返回其与该帖的互动状态（是否点赞、收藏、评分）。同时完整支持投票、活动、悬赏、商品等特殊主题的数据渲染。</p>
             
-            <div class="endpoint-box">GET /plugin.php?id=codeium_api:api&key=你的API密钥&action=thread_content&tid={tid}</div>
+            <div class="endpoint-box">GET /plugin.php?id=codeium_api:api&key=你的API密钥&action=thread_content&tid={tid}&uid={uid}</div>
 
             <h4>1. 请求参数</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th>参数名</th>
-                        <th>类型</th>
-                        <th>必选</th>
-                        <th>描述</th>
-                    </tr>
-                </thead>
+            <table class="params-table">
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
                 <tbody>
-                    <tr>
-                        <td>tid</td>
-                        <td>Int</td>
-                        <td><span class="required">是</span></td>
-                        <td>主题唯一 ID (TID)。</td>
-                    </tr>
-                    <tr>
-                        <td>key</td>
-                        <td>String</td>
-                        <td><span class="required">是</span></td>
-                        <td>您的 API 安全密钥。</td>
-                    </tr>
+                    <tr><td>tid</td><td>Int</td><td><span class="required">是</span></td><td>主题唯一 ID (TID)。</td></tr>
+                    <tr><td>uid</td><td>Int</td><td>否</td><td>当前登录用户 UID。<strong>不传则 <code>user_interaction</code> 状态均为 0。</strong></td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
                 </tbody>
             </table>
 
             <div class="note">
-                <strong>🧩 特殊主题处理指南：</strong><br>
-                1. <strong>识别类型：</strong> 请根据返回的 <code>special_type</code> 判断 UI 布局。<br>
-                &nbsp;&nbsp;&nbsp;• <code>0</code>: 普通图文帖<br>
-                &nbsp;&nbsp;&nbsp;• <code>1</code>: 投票贴 (Poll)<br>
-                &nbsp;&nbsp;&nbsp;• <code>3</code>: 悬赏贴 (Reward)<br>
-                &nbsp;&nbsp;&nbsp;• <code>4</code>: 活动贴 (Activity)<br>
-                2. <strong>数据渲染：</strong> 特殊功能的数据（如选项、截止时间、报名人数）存储在 <code>special_info</code> 对象中。普通帖该字段为空数组。<br>
-                3. <strong>正文渲染：</strong> <code>content</code> 字段始终包含 HTML 格式的文字说明和图片，建议展示在特殊功能组件的下方。
+                <strong>📝 开发核心说明：</strong><br>
+                1. <strong>互动状态同步：</strong> 建议在 App 进入详情页时务必携带当前用户的 <code>uid</code>，这样可以直接获取 <code>is_liked</code>（点赞）和 <code>is_favorited</code>（收藏）状态，从而立即高亮底部的操作图标。<br>
+                2. <strong>正文渲染：</strong> <code>content</code> 字段中的 <code>[attach]</code> 标签已被预处理为 HTML <code>&lt;img&gt;</code> 标签，建议直接在 WebView 或富文本组件中展示。<br>
+                3. <strong>特殊主题：</strong> 请根据 <code>special_type</code> 的值切换 UI 布局（0:普通, 1:投票, 2:商品, 3:悬赏, 4:活动）。
             </div>
 
             <h4>2. 调用示例</h4>
             <div class="code-container">
-                <!-- Curl 示例 -->
-                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式：</div>
-                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=thread_content&tid=10086"</pre>
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式:</div>
+                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=thread_content&tid=10086&uid=1"</pre>
                 
-                <!-- Java 示例 -->
-                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式：</div>
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式:</div>
                 <pre>
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-
-public class ThreadDetailLoader {
-    public static void main(String[] args) throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        String url = "http://你的域名/plugin.php?id=codeium_api:api" +
-                     "&key=你的API密钥" +
-                     "&action=thread_content" +
-                     "&tid=10086";
-
-        Request request = new Request.Builder().url(url).build();
-
-        try (Response response = client.newCall(request).execute()) {
-            if (response.isSuccessful()) {
-                System.out.println("详情数据: " + response.body().string());
-            }
-        }
-    }
-}</pre>
+OkHttpClient client = new OkHttpClient().newBuilder().build();
+HttpUrl url = HttpUrl.parse("http://你的域名/plugin.php").newBuilder()
+    .addQueryParameter("id", "codeium_api:api")
+    .addQueryParameter("key", "你的API密钥")
+    .addQueryParameter("action", "thread_content")
+    .addQueryParameter("tid", "10086")
+    .addQueryParameter("uid", "1")
+    .build();
+Request request = new Request.Builder().url(url).build();
+Response response = client.newCall(request).execute();</pre>
             </div>
+            
+            <h4>3. 返回字段说明</h4>
+            <table>
+                <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>tid</td><td>Int</td><td>主题 ID。</td></tr>
+                    <tr><td>recommend_add</td><td>Int</td><td><b>总点赞数</b> (评价指数)。</td></tr>
+                    <tr><td>favtimes</td><td>Int</td><td><b>总收藏次数</b>。</td></tr>
+                    <tr><td><b>user_interaction</b></td><td>Object</td><td><b>当前用户互动状态：</b></td></tr>
+                    <tr><td>is_liked</td><td>Int</td><td>1=已点赞/推荐，0=未操作。</td></tr>
+                    <tr><td>is_favorited</td><td>Int</td><td>1=已加入收藏夹，0=未操作。</td></tr>
+                    <tr><td>is_rated</td><td>Int</td><td>1=已对此贴评过分，0=未操作。</td></tr>
+                    <tr><td>special_type</td><td>Int</td><td>主题类型：0普通, 1投票, 2商品, 3悬赏, 4活动。</td></tr>
+                    <tr><td>special_info</td><td>Object</td><td>特殊主题的结构化数据（如投票选项、活动地点等）。</td></tr>
+                </tbody>
+            </table>
 
-            <h4>4. 响应示例：投票贴 (含图片)</h4>
+            <h4>4. 成功响应示例 (以点赞且收藏过的投票贴为例)</h4>
             <pre>
 {
     "code": 0,
     "message": "Success",
     "data": {
         "tid": "10086",
-        "subject": "摄影大赛投票",
+        "subject": "带图的 API 开发教程（投票版）",
+        "author": "admin",
+        "avatar": "http://.../avatar.php?uid=1&size=middle",
+        "recommend_add": 15,
+        "favtimes": 3,
+        "user_interaction": {
+            "is_liked": 1,
+            "is_favorited": 1,
+            "is_rated": 0
+        },
         "special_type": 1,
         "special_info": {
             "maxchoices": 1,
-            "expiration": "永久",
-            "voters": 500,
+            "voters": 50,
             "options": [
-                {
-                    "polloptionid": "1",
-                    "polloption": "作品A：日出",
-                    "votes": "120",
-                    "percent": 24.0,
-                    "image": "http://域名/data/attachment/forum/2025/poll_1.jpg"
-                },
-                {
-                    "polloptionid": "2",
-                    "polloption": "作品B：星空",
-                    "votes": "380",
-                    "percent": 76.0,
-                    "image": "http://域名/data/attachment/forum/2025/poll_2.jpg"
-                }
+                { "polloptionid": "1", "polloption": "选项A", "votes": "20", "image": "http://..." }
             ]
         },
-        "content": "&lt;p&gt;请选出你最喜欢的作品...&lt;/p&gt;"
-    }
-}</pre>
-
-            <h4>5. 响应示例：活动贴 (含海报)</h4>
-            <pre>
-{
-    "code": 0,
-    "message": "Success",
-    "data": {
-        "tid": "10088",
-        "subject": "周末登山活动",
-        "special_type": 4,
-        "special_info": {
-            "starttimefrom": "2025-05-01 08:00",
-            "place": "西山风景区",
-            "cost": "0",
-            "class": "户外",
-            "number": "50",
-            "applynumber": "32",
-            "cover_image": "http://域名/data/attachment/forum/2025/activity_poster.jpg"
-        },
-        "content": "&lt;p&gt;集合时间地点...&lt;/p&gt;"
-    }
-}</pre>
-
-            <h4>5. 响应示例：活动贴 (Activity)</h4>
-            <pre>
-{
-    "code": 0,
-    "message": "Success",
-    "data": {
-        "tid": "10088",
-        "subject": "本周末线下摄影聚会",
-        "special_type": 4,
-        "special_info": {
-            "starttimefrom": "2025-05-01 14:00",
-            "starttimeto": "2025-05-01 18:00",
-            "place": "市中心人民公园",
-            "cost": "50",           // 费用
-            "class": "聚餐/摄影",    // 类别
-            "gender": "0",          // 0=不限, 1=男, 2=女
-            "number": "20",         // 需要人数
-            "applynumber": "5"      // 已报名人数
-        },
-        "content": "&lt;p&gt;集合地点在公园南门...&lt;/p&gt;"
-    }
-}</pre>
-            
-            <h4>6. 响应示例：悬赏贴 (Reward)</h4>
-            <pre>
-{
-    "code": 0,
-    "message": "Success",
-    "data": {
-        "tid": "10090",
-        "subject": "求助：这个报错怎么解决？",
-        "special_type": 3,
-        "special_info": {
-            "reward_price": 100,    // 悬赏金额
-            "is_solved": 0          // 0=未解决, 1=已解决
-        },
-        "content": "&lt;p&gt;运行代码时出现了 NullPointer...&lt;/p&gt;"
+        "content": "&lt;p&gt;这是解析后的图文正文...&lt;img src=\"...\" /&gt;&lt;/p&gt;"
     }
 }</pre>
         </div>
@@ -987,7 +893,7 @@ public class ThreadDetailLoader {
 
 <!-- 参与投票 -->
 <div id="poll_vote" class="section">
-    <h2>参与投票 <span class="badge bg-upd">逻辑强化</span></h2>
+    <h2>参与投票 <span class="badge bg-new">新增模块</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: poll_vote</h3>
@@ -1190,7 +1096,7 @@ curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
 
 <!--  全站最新动态 -->
 <div id="latest_threads" class="section">
-    <h2>全站最新动态 <span class="badge bg-upd">摘要模式</span></h2>
+    <h2>全站最新动态 <span class="badge bg-new">新增模块</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: latest_threads</h3>
@@ -1313,13 +1219,13 @@ public class LatestNewsFetcher {
                 "abstract": "刚整理好今天的照片，分享给大家...",
                 "author": "admin",
                 "authorid": "1",
-                "avatar": "http://域名/uc_server/avatar.php?uid=1&size=small",
+                "avatar": "http://你的域名/uc_server/avatar.php?uid=1&size=small",
                 "views": "45",
                 "replies": "2",
                 "special_type": 0,
                 "dateline": "5分钟前",
                 "image_list": [
-                    "http://域名/data/attachment/forum/2025/01/a.jpg"
+                    "http://你的域名/data/attachment/forum/2025/01/a.jpg"
                 ],
                 "has_image": 1
             }
@@ -1632,7 +1538,7 @@ public class NewThreadPoster {
 
 <!-- 发布投票贴 -->
 <div id="new_poll" class="section">
-    <h2>发布投票贴 <span class="badge bg-new">JSON Body 模式</span></h2>
+    <h2>发布投票贴 <span class="badge bg-upd">JSON Body 模式</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: new_poll</h3>
@@ -1722,7 +1628,7 @@ $response</pre>
                 <!-- Curl -->
                 <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl (Bash)：</div>
                 <pre>
-curl -X POST "https://域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=new_poll" \
+curl -X POST "https://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=new_poll" \
      -H "Content-Type: application/json" \
      -d '{
            "uid": 1,
@@ -1752,7 +1658,7 @@ public class PollApiTest {
         );
 
         Request request = new Request.Builder()
-                .url("https://域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=new_poll")
+                .url("https://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=new_poll")
                 .post(body)
                 .build();
 
@@ -1950,7 +1856,7 @@ public class PostEditor {
     </div>
 </div>
 
-<!-- 编辑投票贴 -->
+<!-- 编辑/删除投票贴 -->
 <div id="edit_poll" class="section">
     <h2>编辑投票贴 <span class="badge bg-upd">JSON Body 模式</span></h2>
     <div class="api-card">
@@ -2048,7 +1954,7 @@ String json = "{" +
 
 RequestBody body = RequestBody.create(json, MediaType.parse("application/json"));
 Request request = new Request.Builder()
-        .url("https://域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=edit_poll")
+        .url("https://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=edit_poll")
         .post(body)
         .build();</pre>
             </div>
@@ -2066,7 +1972,7 @@ Request request = new Request.Builder()
 
 <!--  附件图片上传 -->
 <div id="upload_image" class="section">
-    <h2>附件图片上传 <span class="badge bg-new">发帖必备</span></h2>
+    <h2>附件图片上传 <span class="badge bg-new">新增模块</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: upload_image</h3>
@@ -2755,7 +2661,7 @@ public class NotificationLoader {
                 "is_new": 1,
                 "author": "小宝贝A",
                 "authorid": "205",
-                "avatar": "https://域名/uc_server/avatar.php?uid=205&size=small",
+                "avatar": "https://你的域名/uc_server/avatar.php?uid=205&size=small",
                 "note": "小宝贝A 回复了您的帖子 <a href=\"...\">帖子标题</a>",
                 "dateline": "5分钟前"
             }
@@ -2768,7 +2674,7 @@ public class NotificationLoader {
 
 <!-- 管理发送提醒 -->
 <div id="send_notification" class="section">
-    <h2>管理发送提醒 <span class="badge bg-new">管理指令</span></h2>
+    <h2>管理发送提醒</h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: send_notification</h3>
@@ -2903,6 +2809,403 @@ public class AdminNotifier {
     </div>
 </div>
 
+<!-- 收藏/取消 版块 -->
+<div id="favorite_forum" class="section">
+    <h2>收藏/取消 版块 <span class="badge bg-new">新增模块</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: favorite_forum</h3>
+            <div><span class="method-tag post">POST</span></div>
+        </div>
+        <div class="api-body">
+            <p>对指定版块执行“收藏”或“取消收藏”操作。收藏成功的版块通常用于 App 的“收藏”列表中显示。</p>
+            
+            <div class="endpoint-box">POST /plugin.php?id=codeium_api:api</div>
+
+            <h4>注意事项</h4>
+            <div class="note">
+                • <strong>状态检查：</strong> 接口会自动校验版块是否存在以及是否开启。若版块被关闭，将返回错误码 <code>-7</code>。<br>
+                • <strong>幂等性：</strong> <code>do=del</code> 操作是幂等的，即无论之前是否已收藏，执行删除操作均返回成功。
+            </div>
+
+            <h4>请求参数</h4>
+            <table>
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>操作用户 UID。</td></tr>
+                    <tr><td>fid</td><td>Int</td><td><span class="required">是</span></td><td>目标版块 FID。</td></tr>
+                    <tr><td>do</td><td>String</td><td>否</td><td>动作指令：<code>add</code> (收藏，默认), <code>del</code> (取消收藏)。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>调用示例</h4>
+            <div class="code-container">
+                <div style="font-weight:bold; font-size:0.8rem; color:#64748b;">Curl (添加收藏):</div>
+                <pre>curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
+     -d "key=你的API密钥" \
+     -d "action=favorite_forum" \
+     -d "uid=1" \
+     -d "fid=2" \
+     -d "do=add"</pre>
+                
+                <div style="margin-top:20px; font-weight:bold; font-size:0.8rem; color:#64748b;">Java (OkHttp3) 方式:</div>
+                <pre>
+RequestBody body = new FormBody.Builder()
+    .add("id", "codeium_api:api")
+    .add("key", "你的API密钥")
+    .add("action", "favorite_forum")
+    .add("uid", "1")
+    .add("fid", "2")
+    .add("do", "del") // 执行取消
+    .build();
+Request request = new Request.Builder().url(url).post(body).build();
+Response response = client.newCall(request).execute();</pre>
+            </div>
+
+            <h4>4. 成功响应示例</h4>
+<pre>
+{
+    "code": 0,
+    "message": "Forum favorite added",
+    "data": null
+}</pre>
+
+            <h4>私有错误码</h4>
+            <table>
+                <thead><tr><th>状态码</th><th>含义</th><th>详细说明</th></tr></thead>
+                <tbody>
+                    <tr><td>-7</td><td>版块无效</td><td>版块 ID 不存在或该版块已在后台关闭。</td></tr>
+                    <tr><td>-15</td><td>重复收藏</td><td>该版块已经在用户的收藏列表中。</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 收藏/取消 帖子 -->
+<div id="favorite_thread" class="section">
+    <h2>收藏/取消 帖子 <span class="badge bg-new">新增模块</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: favorite_thread</h3>
+            <div><span class="method-tag post">POST</span></div>
+        </div>
+        <div class="api-body">
+            <p>对指定帖子执行收藏或取消收藏操作。系统会自动同步更新帖子的“被收藏次数”统计。</p>
+            
+            <div class="endpoint-box">POST /plugin.php?id=codeium_api:api</div>
+
+            <h4>注意事项</h4>
+            <div class="note">
+                • <strong>热度同步：</strong> 添加收藏成功后，该帖子的 <code>favtimes</code> 字段会自动 +1。<br>
+                • <strong>有效性检查：</strong> 接口会自动拦截不存在或已被删除（在回收站）的帖子，返回 <code>-8</code>。
+            </div>
+
+            <h4>请求参数</h4>
+            <table>
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>操作用户 UID。</td></tr>
+                    <tr><td>tid</td><td>Int</td><td><span class="required">是</span></td><td>目标帖子 TID。</td></tr>
+                    <tr><td>do</td><td>String</td><td>否</td><td>动作指令：<code>add</code> (收藏，默认), <code>del</code> (取消收藏)。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>调用示例</h4>
+            <div class="code-container">
+                <div style="font-weight:bold; font-size:0.8rem; color:#64748b;">Curl (添加收藏):</div>
+                <pre>curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
+     -d "key=你的API密钥" \
+     -d "action=favorite_thread" \
+     -d "uid=1" \
+     -d "tid=10086" \
+     -d "do=add"</pre>
+                
+                <div style="margin-top:20px; font-weight:bold; font-size:0.8rem; color:#64748b;">Java (OkHttp3) 方式:</div>
+                <pre>
+RequestBody body = new FormBody.Builder()
+    .add("id", "codeium_api:api")
+    .add("key", "你的API密钥")
+    .add("action", "favorite_thread")
+    .add("uid", "1")
+    .add("tid", "10086")
+    .add("do", "add")
+    .build();
+Request request = new Request.Builder().url(url).post(body).build();</pre>
+            </div>
+
+            <h4>4. 成功响应示例</h4>
+<pre>
+{
+    "code": 0,
+    "message": "Favorite added",
+    "data": null
+}</pre>
+
+            <h4>私有错误码</h4>
+            <table>
+                <thead><tr><th>状态码</th><th>含义</th><th>详细说明</th></tr></thead>
+                <tbody>
+                    <tr><td>-8</td><td>帖子无效</td><td>帖子 ID 不存在或帖子已被删除/审核中。</td></tr>
+                    <tr><td>-15</td><td>重复收藏</td><td>该帖子已经在用户的收藏列表中。</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 用户收藏列表 -->
+<div id="favorite_list" class="section">
+    <h2>我的收藏列表 <span class="badge bg-new">新增板块</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: favorite_list</h3>
+            <div><span class="method-tag get">GET</span></div>
+        </div>
+        <div class="api-body">
+            <p>分页获取用户的收藏内容。支持通过参数筛选只看“帖子”或“版块”。列表默认按收藏时间倒序排列。</p>
+            
+            <div class="endpoint-box">GET /plugin.php?id=codeium_api:api&action=favorite_list&uid={uid}&type={type}</div>
+
+            <h4>注意事项</h4>
+            <div class="note">
+                • <strong>标题快照：</strong> 返回的 <code>title</code> 是收藏那一刻的标题快照。如果原贴后续改名，此处的标题可能不会实时更新。<br>
+                • <strong>类型映射：</strong> 返回数据中的 <code>type</code> 字段对应关系：<code>thread</code> (帖子), <code>forum</code> (版块)。
+            </div>
+
+            <h4>请求参数</h4>
+            <table>
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>目标用户 UID。</td></tr>
+                    <tr><td>type</td><td>String</td><td>否</td><td>筛选类型：<code>all</code>(默认), <code>thread</code>, <code>forum</code>。</td></tr>
+                    <tr><td>page</td><td>Int</td><td>否</td><td>页码，默认 1。</td></tr>
+                    <tr><td>perpage</td><td>Int</td><td>否</td><td>每页数量，默认 20。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>调用示例</h4>
+            <div class="code-container">
+                <div style="font-weight:bold; font-size:0.8rem; color:#64748b;">Curl (只看帖子):</div>
+                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=favorite_list&uid=1&type=thread"</pre>
+                
+                <div style="margin-top:20px; font-weight:bold; font-size:0.8rem; color:#64748b;">Java (OkHttp3):</div>
+                <pre>
+OkHttpClient client = new OkHttpClient().newBuilder().build();
+HttpUrl url = HttpUrl.parse("http://你的域名/plugin.php").newBuilder()
+    .addQueryParameter("id", "codeium_api:api")
+    .addQueryParameter("key", "你的API密钥")
+    .addQueryParameter("action", "favorite_list")
+    .addQueryParameter("uid", "1")
+    .addQueryParameter("type", "thread") // 筛选参数
+    .build();
+Request request = new Request.Builder().url(url).build();
+Response response = client.newCall(request).execute();</pre>
+            </div>
+
+            <h4>4. 成功响应示例</h4>
+<pre>
+{
+    "code": 0,
+    "message": "Success",
+    "data": {
+        "total": 2,
+        "page": 1,
+        "perpage": 20,
+        "list": [
+            {
+                "favid": "15",
+                "id": "1474",
+                "type": "thread",
+                "title": "这是被收藏的帖子标题",
+                "description": "",
+                "dateline": "2026-01-05 10:30"
+            },
+            {
+                "favid": "16",
+                "id": "32",
+                "type": "forum",
+                "title": "默认版块名称",
+                "description": "",
+                "dateline": "2026-01-05 09:15"
+            }
+        ]
+    }
+}</pre>
+        </div>
+    </div>
+</div>
+
+<!-- 点赞/支持接口 -->
+<div id="post_like" class="section">
+    <h2>点赞/支持 <span class="badge bg-new">互动</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: post_like</h3>
+            <div><span class="method-tag post">POST</span></div>
+        </div>
+        <div class="api-body">
+            <p>对指定主题进行点赞或取消操作，会同步更新帖子热度并通知作者。</p>
+            
+            <div class="endpoint-box">POST /plugin.php?id=codeium_api:api&key=你的API密钥&action=post_like</div>
+
+            <h4>1. 请求参数</h4>
+            <table class="params-table">
+                <thead><tr><th>参数</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>操作用户 UID。</td></tr>
+                    <tr><td>tid</td><td>Int</td><td><span class="required">是</span></td><td>主题 TID。</td></tr>
+                    <tr><td>do</td><td>String</td><td>否</td><td><code>add</code> (点赞, 默认), <code>cancel</code> (取消)。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
+                </tbody>
+            </table>
+
+            <div class="note">
+                <strong>💡 交互规则：</strong><br>
+                1. <strong>唯一性检查：</strong> 同一用户对同一帖子仅能点赞一次（不可重复 add）。<br>
+                2. <strong>反悔机制：</strong> 支持随时通过 <code>cancel</code> 指令撤销点赞，撤销后帖子热度将同步扣减。
+            </div>
+
+            <h4>2. 调用示例</h4>
+            <div class="code-container">
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式:</div>
+                <pre>curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" -d "key=你的API密钥&action=post_like&uid=1&tid=1024&do=add"</pre>
+                
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式:</div>
+                <pre>
+RequestBody body = new FormBody.Builder()
+    .add("id", "codeium_api:api")
+    .add("key", "你的API密钥")
+    .add("action", "post_like")
+    .add("uid", "1")
+    .add("tid", "1024")
+    .add("do", "add")
+    .build();
+Request request = new Request.Builder().url(url).post(body).build();</pre>
+            </div>
+            <h4>3. 返回字段说明</h4>
+            <table>
+                <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>is_liked</td><td>Int</td><td>最终点赞状态：1=已点赞，0=未点赞。</td></tr>
+                    <tr><td>current_likes</td><td>Int</td><td>该帖当前最新的点赞/支持总数。</td></tr>
+                </tbody>
+            </table>
+                        <h4>4. 成功响应示例</h4>
+<pre>
+{
+    "code": 0,
+    "message": "Liked successfully",
+    "data": {
+        "tid": 1474,
+        "is_liked": 1,
+        "current_likes": 25
+    }
+}</pre>
+        </div>
+    </div>
+</div>
+
+<!-- 帖子评分接口 -->
+<div id="post_rate" class="section">
+    <h2>帖子评分 <span class="badge bg-new">新增模块</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: post_rate</h3>
+            <div><span class="method-tag post">POST</span></div>
+        </div>
+        <div class="api-body">
+            <p>对指定的回帖或楼主贴（根据 PID）进行评分操作。接口深度适配 Discuz! 权限体系，支持自动解析明文或序列化权限配置，具备完善的<b>重复评分拦截机制</b>，并会向作者发送带跳转链接的实时变动通知。</p>
+            
+            <div class="endpoint-box">POST /plugin.php?id=codeium_api:api&key=你的API密钥&action=post_rate</div>
+
+            <h4>注意事项</h4>
+            <div class="note">
+                • <strong>参数关键：</strong> 评分是针对 <strong>PID（帖子ID）</strong> 执行的。请务必先通过 <code>thread_content</code> 接口获取主楼的 <code>pid</code> 或通过 <code>post_list</code> 获取回帖的 <code>pid</code>，切勿直接传入 TID。<br>
+                • <strong>重复拦截：</strong> 接口会自动校验 <code>forum_ratelog</code>。同一用户对同一帖子仅能执行一次评分，重复操作将返回 <code>-15</code>。<br>
+                • <strong>通知机制：</strong> 评分成功后，作者将在“提醒”中收到一条 HTML 通知。注意：Discuz! 逻辑禁止“自己给自己发通知”，测试时请使用不同账号。
+            </div>
+
+            <h4>1. 请求参数</h4>
+            <table class="params-table">
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>操作者（评分人）的 UID。</td></tr>
+                    <tr><td>pid</td><td>Int</td><td><span class="required">是</span></td><td>目标帖子的 <b>PID</b>（非 TID）。</td></tr>
+                    <tr><td>credit_id</td><td>Int</td><td><span class="required">是</span></td><td><b>积分项序号：</b><code>1-8</code>，对应后台 extcredits1 至 8。</td></tr>
+                    <tr><td>score</td><td>Int</td><td><span class="required">是</span></td><td><b>评分数值：</b>正数为加，负数为扣。须在用户组单次区间内。</td></tr>
+                    <tr><td>reason</td><td>String</td><td>否</td><td>评分理由（建议 20 字以内）。默认：<code>API评分</code>。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>2. 调用示例</h4>
+            <div class="code-container">
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式：</div>
+                <pre>curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
+     -d "key=你的密钥" \
+     -d "action=post_rate" \
+     -d "uid=1" \
+     -d "pid=55620" \
+     -d "credit_id=3" \
+     -d "score=2" \
+     -d "reason=干货满满"</pre>
+                
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式：</div>
+                <pre>
+RequestBody body = new FormBody.Builder()
+    .add("id", "codeium_api:api")
+    .add("key", "你的API密钥")
+    .add("action", "post_rate")
+    .add("uid", "1")
+    .add("pid", "55620")
+    .add("credit_id", "3")
+    .add("score", "2")
+    .add("reason", "API测试")
+    .build();
+Request request = new Request.Builder().url(url).post(body).build();
+Response response = client.newCall(request).execute();</pre>
+            </div>
+            
+            <h4>3. 返回字段说明</h4>
+            <table>
+                <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>code</td><td>Int</td><td>0=成功，负数为错误拦截。</td></tr>
+                    <tr><td>message</td><td>String</td><td>操作状态描述。</td></tr>
+                    <tr><td>data.score</td><td>Int</td><td>本次操作执行的最终数值。</td></tr>
+                    <tr><td>data.new_balance</td><td>Int</td><td>评分人扣除分值后的<b>实时余额</b>。</td></tr>
+                </tbody>
+            </table>
+<h4>4. 成功响应示例</h4>
+<pre>
+{
+    "code": 0,
+    "message": "Rated successfully",
+    "data": {
+        "score": 2,
+        "author_uid": 16,
+        "new_balance": 120
+    }
+}</pre>
+            <h4>4. 模块私有错误码</h4>
+            <table>
+                <thead><tr><th>状态码</th><th>含义</th><th>详细说明</th></tr></thead>
+                <tbody>
+                    <tr><td>-9</td><td>权限被拒</td><td>1. 试图给自己的帖子评分；2. 用户组无该积分评分权。</td></tr>
+                    <tr><td>-15</td><td>重复评分</td><td>您已经对此帖子进行过评分，不可重复操作。</td></tr>
+                    <tr><td>-19</td><td>超额拦截</td><td>1. 分值不在单次评分区间内；2. 超过每日评分总限额。</td></tr>
+                    <tr><td>-20</td><td>余额不足</td><td>当前处于“扣除自身”模式，但评分人账户余额不足。</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
 <!----------社交好友模块---------->
 
 <!-- 获取好友列表 -->
@@ -2964,7 +3267,7 @@ Response response = client.newCall(request).execute();</pre>
             {
                 "uid": "105",
                 "username": "测试用户",
-                "avatar": "http://域名/uc_server/avatar.php?uid=105&size=small",
+                "avatar": "http://你的域名/uc_server/avatar.php?uid=105&size=small",
                 "dateline": "2025-12-30"
             }
         ]
@@ -3291,7 +3594,7 @@ public class MessageInboxLoader {
                 "subject": "小宝贝A",
                 "summary": "你好，想请教一个问题...",
                 "last_author": "小宝贝A",
-                "last_avatar": "https://域名/uc_server/avatar.php?uid=205&size=small",
+                "last_avatar": "https://你的域名/uc_server/avatar.php?uid=205&size=small",
                 "last_time": "10分钟前"
             }
         ]
@@ -3426,7 +3729,7 @@ public class ChatDetailLoader {
             {
                 "pmid": "1001",
                 "author": "测试用户A",
-                "avatar": "https://域名/uc_server/avatar.php?uid=1803&size=small",
+                "avatar": "https://你的域名/uc_server/avatar.php?uid=1803&size=small",
                 "message": "在吗？",
                 "dateline": "昨天 14:00",
                 "is_mine": 0
@@ -3434,7 +3737,7 @@ public class ChatDetailLoader {
             {
                 "pmid": "1002",
                 "author": "我",
-                "avatar": "https://域名/uc_server/avatar.php?uid=1&size=small",
+                "avatar": "https://你的域名/uc_server/avatar.php?uid=1&size=small",
                 "message": "在的，请讲。",
                 "dateline": "10分钟前",
                 "is_mine": 1
@@ -3706,7 +4009,7 @@ public class PrivateMessageSender {
 
 <!-- 用户登录/授权 -->
 <div id="login" class="section">
-    <h2>用户登录/授权 <span class="badge bg-upd">获取 Cookie</span></h2>
+    <h2>用户登录/授权</h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: login</h3>
@@ -4546,7 +4849,7 @@ public class AvatarUploader {
 
 <!-- 获取用户勋章 -->
 <div id="user_medal_list" class="section">
-    <h2>获取用户勋章 <span class="badge bg-upd">修正</span></h2>
+    <h2>获取用户勋章 <span class="badge bg-new">新增模块</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: user_medal_list</h3>
@@ -4606,7 +4909,7 @@ Response response = client.newCall(request).execute();</pre>
             {
                 "medalid": "3",
                 "name": "突出贡献",
-                "image": "http://域名/static/image/common/medal3.gif",
+                "image": "http://你的域名/static/image/common/medal3.gif",
                 "description": "为论坛做出杰出贡献",
                 "status": "active"
             }
@@ -4681,7 +4984,7 @@ Response response = client.newCall(request).execute();</pre>
             {
                 "medalid": "1",
                 "name": "活跃新人",
-                "image": "http://域名/static/image/common/medal1.gif",
+                "image": "http://你的域名/static/image/common/medal1.gif",
                 "description": "注册满30天且发帖数大于50"
             }
         ]
@@ -4819,13 +5122,13 @@ public class MyThreadsFetcher {
                 "subject": "我发布的最新作品",
                 "abstract": "这是我个人中心里能看到的帖子摘要...",
                 "authorid": 1,
-                "avatar": "http://域名/uc_server/avatar.php?uid=1&size=small",
+                "avatar": "http://你的域名/uc_server/avatar.php?uid=1&size=small",
                 "views": "102",
                 "replies": "5",
                 "special_type": 0,
                 "dateline": "5分钟前",
                 "image_list": [
-                    "http://域名/data/attachment/forum/2025/01/p.jpg"
+                    "http://你的域名/data/attachment/forum/2025/01/p.jpg"
                 ],
                 "has_image": 1
             }
@@ -4934,7 +5237,7 @@ public class AlbumLoader {
             {
                 "albumid": "10",
                 "albumname": "我的私密自拍",
-                "cover": "http://.../album/a.jpg",
+                "cover": "http://你的域名/album/a.jpg",
                 "is_public": 0,
                 "friend_only": 0,
                 "password_protected": 1,
@@ -5035,7 +5338,7 @@ public class AlbumDetailFetcher {
             {
                 "picid": "101",
                 "title": "大理洱海",
-                "url": "http://域名/data/attachment/album/2025/photo.jpg",
+                "url": "http://你的域名/data/attachment/album/2025/photo.jpg",
                 "size": 524288,
                 "dateline": "10分钟前"
             }
@@ -5201,7 +5504,7 @@ public class AlbumUploader {
 
 <!-- 全站用户搜索 -->
 <div id="user_list" class="section">
-    <h2>全站用户搜索 <span class="badge bg-new">分页/搜索</span></h2>
+    <h2>全站用户搜索</h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: user_list</h3>
@@ -5370,7 +5673,7 @@ public class UserSearchTask {
 
 <!-- 积分变更操作 -->
 <div id="credit" class="section">
-    <h2>积分变更操作 <span class="badge bg-new">财务/奖励</span></h2>
+    <h2>积分变更操作</h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: credit</h3>
