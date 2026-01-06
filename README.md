@@ -193,13 +193,13 @@ ReadMe文档中的Todo不再添加新内容，因为太过麻烦，新的Todo可
   - `medal_list`：勋章基础信息（名称、图标、说明）
   > 在做了在做了
 
-- [ ] **用户收藏接口**
+- [x] **用户收藏接口**
   - `favorite_list`：获取用户收藏的帖子列表
   - `favorite_add`：收藏指定主题
   - `favorite_remove`：取消收藏  
   > 在做了
 
-- [ ] **点赞 / 支持接口**
+- [x] **点赞 / 支持接口**
   - `thread_like`
   - `post_like`  
   >尽量做吧，我真不想干了
@@ -209,11 +209,6 @@ ReadMe文档中的Todo不再添加新内容，因为太过麻烦，新的Todo可
   - `attachment_download_token`  
   > 防止附件被直接扒走，顺便减少站长血压波动
 
-- [ ] **用户等级接口**
-  - `user_level_info`：当前等级与头衔
-  - `level_rule_list`：等级与积分规则
-  - `level_progress`：升级进度  
-  > 实际上可以在客户端判断的
 
 
 ---
