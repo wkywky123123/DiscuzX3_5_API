@@ -857,19 +857,20 @@ if ($action == 'login') {
     
     
     } elseif ($action == 'thread_content') {
-    // --- 完整增强版：帖子详情接口 (含全类型支持 + 互动状态查询) ---
+    // --- 终极版：帖子详情接口 (整合互动状态 + 附件列表 + 全特殊主题支持) ---
 
     $tid = isset($_REQUEST['tid']) ? intval($_REQUEST['tid']) : 0;
-    $uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0; // 接收当前登录用户 UID
+    $uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0; // 当前登录用户UID
     
     if(!$tid) api_return(-3, 'Thread ID (tid) is required');
 
-    // 0. 加载系统设置
+    // 0. 加载核心依赖
     loadcache('setting'); 
+    require_once libfile('function/forum'); // 必须引入，用于支持 aidencode()
 
-    // 1. 查询基础信息 (补充查询统计字段: recommend_add, favtimes)
+    // 1. 查询主题及主楼基础信息 (含统计字段)
     $sql = "SELECT t.tid, t.fid, t.subject, t.author, t.authorid, t.dateline, t.views, t.replies, t.special, t.price,
-                   t.recommends, t.recommend_add, t.favtimes,
+                   t.recommends, t.recommend_add, t.favtimes, t.heats,
                    p.pid, p.message 
             FROM " . DB::table('forum_thread') . " t 
             LEFT JOIN " . DB::table('forum_post') . " p ON p.tid = t.tid AND p.first = 1 
@@ -878,7 +879,7 @@ if ($action == 'login') {
     $thread = DB::fetch_first($sql, array($tid));
     if(!$thread) api_return(-8, 'Thread not found');
 
-    // 2. [核心新增] 获取当前用户的互动状态
+    // 2. 获取当前用户互动状态 (点赞、收藏、评分)
     $user_interaction = array(
         'is_liked' => 0,
         'is_favorited' => 0,
@@ -886,7 +887,7 @@ if ($action == 'login') {
     );
 
     if ($uid > 0) {
-        // A. 检查点赞 (推荐记录)
+        // A. 检查点赞状态 (推荐记录)
         $user_interaction['is_liked'] = DB::result_first("SELECT count(*) FROM ".DB::table('forum_memberrecommend')." WHERE tid=%d AND recommenduid=%d", array($tid, $uid)) ? 1 : 0;
 
         // B. 检查收藏状态 (idtype 为 tid)
@@ -896,27 +897,51 @@ if ($action == 'login') {
         $user_interaction['is_rated'] = DB::result_first("SELECT count(*) FROM ".DB::table('forum_ratelog')." WHERE uid=%d AND pid=%d", array($uid, $thread['pid'])) ? 1 : 0;
     }
 
+    // 3. 解析非图片附件列表 (下载功能支持)
+    $attachment_list = array();
+    $query_attach = DB::query("SELECT aid, tableid FROM ".DB::table('forum_attachment')." WHERE tid=%d", array($tid));
+    while($att_idx = DB::fetch($query_attach)) {
+        $aid = $att_idx['aid'];
+        $tableid = $att_idx['tableid'];
+        $attach = C::t('forum_attachment_n')->fetch($tableid, $aid);
+        
+        if($attach && !$attach['isimage']) {
+            // [修改点]：不再生成 download_url，仅返回元数据
+            $attachment_list[] = array(
+                'aid' => $aid,
+                'filename' => $attach['filename'],
+                'filesize' => sizecount($attach['filesize']),
+                'downloads' => intval($attach['downloads']),
+                'price' => intval($attach['price']),
+                'readperm' => intval($attach['readperm']),
+                'extension' => strtolower(pathinfo($attach['filename'], PATHINFO_EXTENSION))
+                // 此处已移除 download_url
+            );
+        }
+    }
+
+    // 更新浏览量
     C::t('forum_thread')->increase($tid, array('views' => 1));
 
+    // 4. 特殊主题逻辑处理
     $special_info = array();
     $special_type = intval($thread['special']);
 
-    // 3. 特殊主题逻辑 (完整保留并优化)
     if ($special_type == 1) { 
         // --- 投票贴 (Poll) ---
         $poll = C::t('forum_poll')->fetch($tid);
         if($poll) {
+            // 获取投票图片映射
             $poll_imgs = array();
             $query_img = DB::query("SELECT poid, aid FROM ".DB::table('forum_polloption_image')." WHERE tid=$tid");
-            while($img = DB::fetch($query_img)) {
-                $poll_imgs[$img['poid']] = $img['aid'];
-            }
+            while($img = DB::fetch($query_img)) { $poll_imgs[$img['poid']] = $img['aid']; }
 
             $special_info = array(
                 'maxchoices' => $poll['maxchoices'],
                 'expiration' => $poll['expiration'] ? dgmdate($poll['expiration']) : '永久',
                 'voters' => $poll['voters'],
                 'visible' => $poll['visible'],
+                'multiple' => $poll['multiple'],
                 'options' => array()
             );
 
@@ -924,16 +949,12 @@ if ($action == 'login') {
             while($opt = DB::fetch($query)) {
                 $option_image_url = '';
                 if(isset($poll_imgs[$opt['polloptionid']])) {
-                    $aid = intval($poll_imgs[$opt['polloptionid']]);
-                    if($aid > 0) {
-                        $tableid = 127; 
-                        $att = C::t('forum_attachment')->fetch($aid);
-                        if($att) $tableid = $att['tableid']; else $tableid = intval($aid) % 10;
-                        
-                        $att_n = C::t('forum_attachment_n')->fetch($tableid, $aid);
-                        if($att_n) {
-                            $option_image_url = ($att_n['remote'] ? $_G['setting']['ftp']['attachurl'] : $_G['siteurl'].'data/attachment/').'forum/'.$att_n['attachment'];
-                        }
+                    $p_aid = intval($poll_imgs[$opt['polloptionid']]);
+                    $att = C::t('forum_attachment')->fetch($p_aid);
+                    $p_tableid = $att ? $att['tableid'] : ($p_aid % 10);
+                    $att_n = C::t('forum_attachment_n')->fetch($p_tableid, $p_aid);
+                    if($att_n) {
+                        $option_image_url = ($att_n['remote'] ? $_G['setting']['ftp']['attachurl'] : $_G['siteurl'].'data/attachment/').'forum/'.$att_n['attachment'];
                     }
                 }
                 $special_info['options'][] = array(
@@ -947,17 +968,15 @@ if ($action == 'login') {
         }
 
     } elseif ($special_type == 4) {
-        // --- 活动贴 ---
+        // --- 活动贴 (Activity) ---
         $activity = C::t('forum_activity')->fetch($tid);
         if($activity) {
             $activity_cover = '';
             if($activity['aid'] > 0) {
-                $aid = $activity['aid'];
-                $tableid = 127;
-                $att = C::t('forum_attachment')->fetch($aid);
-                if($att) $tableid = $att['tableid']; else $tableid = intval($aid) % 10;
-
-                $att_n = C::t('forum_attachment_n')->fetch($tableid, $aid);
+                $act_aid = $activity['aid'];
+                $att = C::t('forum_attachment')->fetch($act_aid);
+                $act_tableid = $att ? $att['tableid'] : ($act_aid % 10);
+                $att_n = C::t('forum_attachment_n')->fetch($act_tableid, $act_aid);
                 if($att_n) {
                     $activity_cover = ($att_n['remote'] ? $_G['setting']['ftp']['attachurl'] : $_G['siteurl'].'data/attachment/').'forum/'.$att_n['attachment'];
                 }
@@ -976,24 +995,22 @@ if ($action == 'login') {
         }
 
     } elseif ($special_type == 3) {
-        // --- 悬赏贴 ---
+        // --- 悬赏贴 (Reward) ---
         $special_info = array(
             'reward_price' => abs($thread['price']),
             'is_solved' => ($thread['price'] < 0) ? 1 : 0
         );
 
     } elseif ($special_type == 2) {
-        // --- 商品贴 ---
+        // --- 商品贴 (Trade) ---
         $trade = DB::fetch_first("SELECT * FROM ".DB::table('forum_trade')." WHERE tid=$tid ORDER BY pid LIMIT 1");
         if($trade) {
             $trade_img = '';
             if($trade['aid'] > 0) {
-                 $aid = $trade['aid'];
-                 $tableid = 127;
-                 $att = C::t('forum_attachment')->fetch($aid);
-                 if($att) $tableid = $att['tableid']; else $tableid = intval($aid) % 10;
-                 
-                 $att_n = C::t('forum_attachment_n')->fetch($tableid, $aid);
+                 $t_aid = $trade['aid'];
+                 $att = C::t('forum_attachment')->fetch($t_aid);
+                 $t_tableid = $att ? $att['tableid'] : ($t_aid % 10);
+                 $att_n = C::t('forum_attachment_n')->fetch($t_tableid, $t_aid);
                  if($att_n) $trade_img = ($att_n['remote'] ? $_G['setting']['ftp']['attachurl'] : $_G['siteurl'].'data/attachment/').'forum/'.$att_n['attachment'];
             }
             $special_info = array(
@@ -1007,7 +1024,7 @@ if ($action == 'login') {
         }
     }
 
-    // 4. 构建返回
+    // 5. 组装最终结果
     $data = array(
         'tid' => $thread['tid'],
         'pid' => $thread['pid'],
@@ -1016,18 +1033,25 @@ if ($action == 'login') {
         'authorid' => $thread['authorid'],
         'avatar' => $_G['siteurl'] . 'uc_server/avatar.php?uid='.$thread['authorid'].'&size=middle',
         'dateline' => dgmdate($thread['dateline'], 'u'),
-        'views' => $thread['views'] + 1,
-        'replies' => $thread['replies'],
+        'views' => intval($thread['views']) + 1,
+        'replies' => intval($thread['replies']),
         
-        // [统计数据]
+        // 实时统计
         'recommend_add' => intval($thread['recommend_add']),
         'favtimes' => intval($thread['favtimes']),
+        'heats' => intval($thread['heats']),
         
-        // [用户互动状态]
+        // 用户互动状态
         'user_interaction' => $user_interaction, 
+        
+        // 附件列表 (非图片文件)
+        'attachment_list' => $attachment_list,
 
+        // 特殊主题数据
         'special_type' => $special_type,
         'special_info' => $special_info,
+        
+        // 正文解析 (BBCode -> HTML)
         'content' => parse_attach_images($thread['message'])
     );
 
@@ -3160,6 +3184,214 @@ if ($action == 'login') {
         'score' => $score,
         'new_balance' => $user_balance - abs($score)
     ));
+    
+    
+    
+    
+    
+    
+} elseif ($action == 'attachment_download') {
+    // --- 附件下载鉴权与支付合并接口 ---
+
+    $aid = isset($_REQUEST['aid']) ? intval($_REQUEST['aid']) : 0;
+    $uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0;
+    // confirm_pay=1 表示用户已在 App 端点击“确认支付”弹窗
+    $confirm_pay = isset($_REQUEST['confirm_pay']) ? intval($_REQUEST['confirm_pay']) : 0;
+
+    if (!$aid || !$uid) api_return(-3, 'Missing aid or uid');
+
+    // 1. 获取附件信息
+    $att_idx = C::t('forum_attachment')->fetch($aid);
+    if (!$att_idx) api_return(-8, 'Attachment not found');
+    $attach = C::t('forum_attachment_n')->fetch($att_idx['tableid'], $aid);
+    if (!$attach) api_return(-8, 'Attachment data error');
+
+    // 2. 基础下载权限检查
+    $member = C::t('common_member')->fetch($uid);
+    $usergroup = C::t('common_usergroup_field')->fetch($member['groupid']);
+    if (!$usergroup['allowgetattach']) {
+        api_return(-9, 'Your usergroup is not allowed to download attachments');
+    }
+
+    // 3. 计费逻辑判定
+    $price = intval($attach['price']);
+    $authorid = $attach['authorid'];
+    $need_pay = false;
+
+    // 只有附件有价格、且下载者不是作者本人时，才需要走支付流程
+    if ($price > 0 && $uid != $authorid) {
+        // 检查是否已经购买过 (forum_attachmentbuy)
+        $has_bought = DB::result_first("SELECT count(*) FROM " . DB::table('forum_attachmentbuy') . " WHERE aid=%d AND uid=%d", array($aid, $uid));
+        if (!$has_bought) {
+            $need_pay = true;
+        }
+    }
+
+    // 4. 处理支付
+    if ($need_pay) {
+        // 获取系统交易积分类型 (通常是 extcredits2)
+        loadcache('setting');
+        $credit_id = $_G['setting']['creditstrans']; 
+        $credit_field = 'extcredits' . $credit_id;
+        $member_count = C::t('common_member_count')->fetch($uid);
+        
+        // 检查余额
+        if ($member_count[$credit_field] < $price) {
+            api_return(-20, 'Insufficient credits', array('price' => $price, 'credit_id' => $credit_id));
+        }
+
+        // 如果用户还没确认支付，先返回价格信息，让 App 弹窗
+        if (!$confirm_pay) {
+            api_return(1, 'Need confirmation', array(
+                'price' => $price,
+                'credit_name' => $_G['setting']['extcredits'][$credit_id]['title'],
+                'credit_unit' => $_G['setting']['extcredits'][$credit_id]['unit']
+            ));
+        }
+
+        // 执行扣费与记录
+        require_once libfile('function/post');
+        // 扣除下载者积分
+        updatemembercount($uid, array($credit_id => -$price), true, 'BAC', $aid);
+        // 插入购买记录
+        DB::insert('forum_attachmentbuy', array(
+            'aid' => $aid, 'uid' => $uid, 'authorid' => $authorid, 'dateline' => TIMESTAMP, 'price' => $price
+        ));
+        // (可选) 给作者分成逻辑可以在这里根据后台设置补全
+    }
+
+    // 5. 生成授权下载链接 (aidencode)
+    require_once libfile('function/forum');
+    $download_token = aidencode($aid, 0, $attach['tid']);
+    $download_url = $_G['siteurl'] . 'forum.php?mod=attachment&aid=' . $download_token;
+
+    api_return(0, 'Success', array(
+        'aid' => $aid,
+        'filename' => $attach['filename'],
+        'is_paid' => $need_pay ? 1 : 0, // 告知 App 刚才是否发生了扣费
+        'download_url' => $download_url
+    ));
+    
+    
+    
+    
+    
+    
+    
+    
+} elseif ($action == 'register') {
+    // --- 注册接口 (终极完整版：全安全策略同步) ---
+
+    $email = isset($_REQUEST['email']) ? trim($_REQUEST['email']) : '';
+    $invitecode = isset($_REQUEST['invitecode']) ? trim($_REQUEST['invitecode']) : ''; 
+
+    // 0. 加载后台配置与语言包
+    loadcache('setting');
+    $setting = $_G['setting'];
+    $regstatus = $setting['regstatus'];
+    $regname = !empty($setting['regname']) ? $setting['regname'] : 'register';
+
+    // 1. 检查注册总开关
+    if($regstatus == 0) api_return(-1, 'Registration is currently closed');
+
+    // 2. 基础格式校验
+    if(empty($email) || !preg_match("/^[\w\-\.]+@[\w\-\.]+(\.\w+)+$/", $email)) {
+        api_return(-3, 'Invalid email format');
+    }
+
+    // 3. 【安全防护】检查 IP 注册权限 (防止单 IP 暴力刷信)
+    // 检查 ipregctrl (多少小时内同一 IP 不允许重复注册)
+    if($setting['ipregctrl']) {
+        foreach(explode("\n", $setting['ipregctrl']) as $ctrl_ip) {
+            if(preg_match("/^(".preg_quote(trim($ctrl_ip), '/').")/", $_G['clientip'])) {
+                api_return(-22, 'Your IP is in the registration blacklist');
+            }
+        }
+    }
+    // 检查 24 小时内同一 IP 注册量上限
+    if($setting['ipmaxblogcount'] > 0) {
+        $ip_count = DB::result_first("SELECT COUNT(*) FROM ".DB::table('common_member')." WHERE regip=%s AND regdate>%d", array($_G['clientip'], TIMESTAMP - 86400));
+        if($ip_count >= $setting['ipmaxblogcount']) {
+            api_return(-22, 'Too many registrations from your IP in 24 hours');
+        }
+    }
+
+    // 4. 【安全防护】检查邮箱域名限制 (accessemail / censoremail)
+    if($setting['accessemail']) {
+        $matched = false;
+        foreach(explode("\n", $setting['accessemail']) as $domain) {
+            if(strpos($email, trim($domain)) !== false) { $matched = true; break; }
+        }
+        if(!$matched) api_return(-23, 'Only specific email domains are allowed to register');
+    }
+    if($setting['censoremail']) {
+        foreach(explode("\n", $setting['censoremail']) as $domain) {
+            if(strpos($email, trim($domain)) !== false) api_return(-23, 'This email domain is blocked');
+        }
+    }
+
+    // 5. 检查邮箱唯一性
+    $check_email = C::t('common_member')->fetch_by_email($email);
+    if($check_email) api_return(-5, 'Email address already registered');
+
+    // 6. 邀请码逻辑适配
+    if($regstatus == 2 && empty($invitecode)) api_return(-3, 'Invitation code is mandatory');
+    if(!empty($invitecode)) {
+        $invite = DB::fetch_first("SELECT * FROM ".DB::table('common_invite')." WHERE code=%s AND status=0", array($invitecode));
+        if(!$invite || ($invite['endtime'] > 0 && $invite['endtime'] < TIMESTAMP)) {
+            api_return(-21, 'Invalid or expired invitation code');
+        }
+    }
+
+    // 7. 生成官方加密 Hash 及链接
+    require_once libfile('function/member');
+    require_once libfile('function/mail');
+
+    $now = TIMESTAMP;
+    // Discuz! 官方加密算法：包含邮箱和当前时间戳
+    $hash = authcode("$email\t$now", 'ENCODE', $_G['config']['security']['authkey']);
+    
+    // 完美拼装：mod地址 + Hash + email预填充
+    $register_url = $_G['siteurl'].'member.php?mod='.$regname.'&hash='.urlencode($hash).'&email='.urlencode($email);
+    if(!empty($invitecode)) $register_url .= '&invitecode='.urlencode($invitecode);
+
+    // 8. 调用系统邮件引擎发送 (官方文案同步：3天有效期)
+    $site_name = $setting['bbname'];
+    $subject = "论坛注册地址";
+    $message = "
+<p>这封信是由 {$site_name} 发送的。</p>
+<p></p>
+<p>您收到这封邮件，是由于在 {$site_name} 获取了新用户注册地址使用了这个邮箱地址。 如果您并没有访问过 {$site_name}，或没有进行上述操作，请忽略这封邮件。您不需要退订或进行其他进一步的操作。</p>
+<p></p>
+<p></p>
+<p>----------------------------------------------------------------------</p>
+<p>新用户注册说明</p>
+<p>----------------------------------------------------------------------</p>
+<p>如果您是 {$site_name} 的新用户，或在修改您的注册 Email 时使用了本地址，我们需要对您的地址有效性进行验证以避免垃圾邮件或地址被滥用。</p>
+<p>您只需点击下面的链接即可进行用户注册，以下链接有效期为3天。过期可以重新请求发送一封新的邮件验证：</p>
+<br><a href=\"{$register_url}\">{$register_url}</a><br><br>
+(如果上面不是链接形式，请将该地址手工粘贴到浏览器地址栏再访问)
+
+<p>感谢您的访问，祝您使用愉快！</p>
+
+<p>此致</p>
+<p>{$site_name} 管理团队.</p>";
+
+    if(sendmail($email, $subject, $message)) {
+        api_return(0, 'Success: Registration link sent', array('email' => $email));
+    } else {
+        api_return(-11, 'SMTP send failed. Please check site mail settings.');
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

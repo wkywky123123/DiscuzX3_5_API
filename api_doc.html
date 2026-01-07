@@ -276,6 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <li><a href="#edit_post">编辑/删除帖子 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#edit_poll">编辑/删除投票贴 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#upload_image">附件图片上传 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#attachment_download">附件下载鉴权 <span class="badge bg-new">新增</span></a></li>
         </ul>
     </div>
 
@@ -321,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <ul>
             <li><a href="#login">用户登录/授权</a></li>
             <li><a href="#verify_account">账号静默验证</a></li>
-            <li><a href="#register">新用户注册 <span class="badge bg-stop">已停用</span></a></li>
+            <li><a href="#register">新用户注册 <span class="badge bg-new">复活！！</span></a></li>
             <li><a href="#userinfo">个人资料/积分 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#update_profile">修改个人资料 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#upload_avatar">修改用户头像  <span class="badge bg-new">新增</span></a></li>
@@ -340,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="main-content">
     <div class="header-section">
         <h1>Discuz! API Plugin 接口文档</h1>
-        <p>版本: 2.5 | 最后更新: 2026-1-6 | 基准地址: <code>http://你的域名/plugin.php</code></p>
+        <p>版本: 2.5 | 最后更新: 2026-1-7 | 基准地址: <code>http://你的域名/plugin.php</code></p>
         <p>实时进度：<code><a href="https://todo.mrgeda.top/">https://todo.mrgeda.top/</a></code></p>
         <p>项目仓库：<code><a href="https://github.com/wkywky123123/DiscuzX3_5_API/" target="_blank">https://github.com/wkywky123123/DiscuzX3_5_API/</a></code></p>
     </div>
@@ -796,14 +797,14 @@ public class ThreadListFetcher {
 
 <!-- 帖子详情获取 -->
 <div id="thread_content" class="section">
-    <h2>帖子详情获取 <span class="badge bg-upd">增加互动状态</span></h2>
+    <h2>帖子详情获取 <span class="badge bg-upd">新增附件</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: thread_content</h3>
             <div><span class="method-tag get">GET</span></div>
         </div>
         <div class="api-body">
-            <p>获取主题的完整详情。接口会自动解析正文中的图片附件，返回帖子统计数据，并支持针对特定用户（传入 <code>uid</code>）返回其与该帖的互动状态（是否点赞、收藏、评分）。同时完整支持投票、活动、悬赏、商品等特殊主题的数据渲染。</p>
+            <p>获取主题的完整详情。接口会自动解析正文图片，返回主楼 PID、实时统计数据（含点赞、收藏、热度）、用户互动状态，并提取所有<b>非图片类附件</b>生成安全的加密下载链接。同时完美支持投票、活动、悬赏等特殊主题逻辑。</p>
             
             <div class="endpoint-box">GET /plugin.php?id=codeium_api:api&key=你的API密钥&action=thread_content&tid={tid}&uid={uid}</div>
 
@@ -812,22 +813,22 @@ public class ThreadListFetcher {
                 <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
                 <tbody>
                     <tr><td>tid</td><td>Int</td><td><span class="required">是</span></td><td>主题唯一 ID (TID)。</td></tr>
-                    <tr><td>uid</td><td>Int</td><td>否</td><td>当前登录用户 UID。<strong>不传则 <code>user_interaction</code> 状态均为 0。</strong></td></tr>
+                    <tr><td>uid</td><td>Int</td><td>否</td><td>当前登录用户 UID。<strong>传入后可实时获取点赞/收藏状态及加密下载 Token。</strong></td></tr>
                     <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
                 </tbody>
             </table>
 
             <div class="note">
-                <strong>📝 开发核心说明：</strong><br>
-                1. <strong>互动状态同步：</strong> 建议在 App 进入详情页时务必携带当前用户的 <code>uid</code>，这样可以直接获取 <code>is_liked</code>（点赞）和 <code>is_favorited</code>（收藏）状态，从而立即高亮底部的操作图标。<br>
-                2. <strong>正文渲染：</strong> <code>content</code> 字段中的 <code>[attach]</code> 标签已被预处理为 HTML <code>&lt;img&gt;</code> 标签，建议直接在 WebView 或富文本组件中展示。<br>
-                3. <strong>特殊主题：</strong> 请根据 <code>special_type</code> 的值切换 UI 布局（0:普通, 1:投票, 2:商品, 3:悬赏, 4:活动）。
+                <strong>🛡️ 核心开发指南：</strong><br>
+                1. <strong>主楼 PID：</strong> 接口返回的 <code>pid</code> 是主楼的唯一 ID，执行“评分”操作时必须使用此 ID。<br>
+                2. <strong>附件下载：</strong> <code>attachment_list</code> 专门存放非图片文件（zip, rar, pdf等）。其中的 <code>download_url</code> 已通过 <code>aidencode</code> 加密，支持 Discuz! 原生积分扣费与下载量统计。<br>
+                3. <strong>热度同步：</strong> <code>heats</code> 字段反映了帖子的全站热度，App 可据此展示“火热”图标。
             </div>
 
             <h4>2. 调用示例</h4>
             <div class="code-container">
                 <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式:</div>
-                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=thread_content&tid=10086&uid=1"</pre>
+                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=thread_content&tid=1521&uid=1"</pre>
                 
                 <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式:</div>
                 <pre>
@@ -836,7 +837,7 @@ HttpUrl url = HttpUrl.parse("http://你的域名/plugin.php").newBuilder()
     .addQueryParameter("id", "codeium_api:api")
     .addQueryParameter("key", "你的API密钥")
     .addQueryParameter("action", "thread_content")
-    .addQueryParameter("tid", "10086")
+    .addQueryParameter("tid", "1521")
     .addQueryParameter("uid", "1")
     .build();
 Request request = new Request.Builder().url(url).build();
@@ -847,44 +848,44 @@ Response response = client.newCall(request).execute();</pre>
             <table>
                 <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
                 <tbody>
-                    <tr><td>tid</td><td>Int</td><td>主题 ID。</td></tr>
-                    <tr><td>recommend_add</td><td>Int</td><td><b>总点赞数</b> (评价指数)。</td></tr>
-                    <tr><td>favtimes</td><td>Int</td><td><b>总收藏次数</b>。</td></tr>
-                    <tr><td><b>user_interaction</b></td><td>Object</td><td><b>当前用户互动状态：</b></td></tr>
-                    <tr><td>is_liked</td><td>Int</td><td>1=已点赞/推荐，0=未操作。</td></tr>
-                    <tr><td>is_favorited</td><td>Int</td><td>1=已加入收藏夹，0=未操作。</td></tr>
-                    <tr><td>is_rated</td><td>Int</td><td>1=已对此贴评过分，0=未操作。</td></tr>
-                    <tr><td>special_type</td><td>Int</td><td>主题类型：0普通, 1投票, 2商品, 3悬赏, 4活动。</td></tr>
-                    <tr><td>special_info</td><td>Object</td><td>特殊主题的结构化数据（如投票选项、活动地点等）。</td></tr>
+                    <tr><td>tid / pid</td><td>Int</td><td>主题 ID / <b>主楼帖子 ID</b>（用于评分）。</td></tr>
+                    <tr><td>recommend_add</td><td>Int</td><td>总点赞（支持）数。</td></tr>
+                    <tr><td>favtimes / heats</td><td>Int</td><td>总收藏数 / <b>当前热度值</b>。</td></tr>
+                    <tr><td><b>user_interaction</b></td><td>Object</td><td><b>当前用户状态：</b><code>is_liked</code>, <code>is_favorited</code>, <code>is_rated</code>。</td></tr>
+                    <tr><td><b>attachment_list</b></td><td>Array</td><td><b>文件附件列表：</b>包含文件名、大小、售价。</td></tr>
+                    <tr><td>special_type</td><td>Int</td><td>0普通, 1投票, 2商品, 3悬赏, 4活动。</td></tr>
+                    <tr><td>special_info</td><td>Object</td><td>特殊主题数据（如投票选项、活动详情等）。</td></tr>
                 </tbody>
             </table>
 
-            <h4>4. 成功响应示例 (以点赞且收藏过的投票贴为例)</h4>
+            <h4>4. 成功响应示例</h4>
             <pre>
 {
     "code": 0,
     "message": "Success",
     "data": {
-        "tid": "10086",
-        "subject": "带图的 API 开发教程（投票版）",
-        "author": "admin",
-        "avatar": "http://.../avatar.php?uid=1&size=middle",
-        "recommend_add": 15,
-        "favtimes": 3,
+        "tid": "1521",
+        "pid": "55620",
+        "subject": "终极版 API 资源帖",
+        "recommend_add": 12,
+        "favtimes": 5,
+        "heats": 18,
         "user_interaction": {
             "is_liked": 1,
-            "is_favorited": 1,
-            "is_rated": 0
+            "is_favorited": 0,
+            "is_rated": 1
         },
-        "special_type": 1,
-        "special_info": {
-            "maxchoices": 1,
-            "voters": 50,
-            "options": [
-                { "polloptionid": "1", "polloption": "选项A", "votes": "20", "image": "http://..." }
-            ]
-        },
-        "content": "&lt;p&gt;这是解析后的图文正文...&lt;img src=\"...\" /&gt;&lt;/p&gt;"
+        "attachment_list": [
+            {
+                "aid": "4482",
+                "filename": "精品资源.zip",
+                "filesize": "1.52 MB",
+                "price": 2,
+                "downloads": 88,
+            }
+        ],
+        "special_type": 0,
+        "content": "&lt;p&gt;这是图文正文...&lt;/p&gt;"
     }
 }</pre>
         </div>
@@ -2108,6 +2109,87 @@ public class ImageUploader {
     </div>
 </div>
 
+<!-- 附件下载鉴权接口 -->
+<div id="attachment_download" class="section">
+    <h2>附件下载鉴权 <span class="badge bg-new">检查/支付/授权</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: attachment_download</h3>
+            <div><span class="method-tag get">GET/POST</span></div>
+        </div>
+        <div class="api-body">
+            <p>附件下载的一站式处理接口。接口会自动检查用户组权限、附件售价以及<b>历史购买记录</b>。如果附件已购买或免费，直接返回授权链接；如果需要付费，会引导支付流程。</p>
+            
+            <div class="endpoint-box">GET /plugin.php?id=codeium_api:api&key=你的API密钥&action=attachment_download&aid={aid}&uid={uid}&confirm_pay=0</div>
+
+            <h4>注意事项</h4>
+            <div class="note">
+                • <strong>状态码 1 (支付提醒)：</strong> 当接口返回 <code>code: 1</code> 时，表示用户需要支付，App 应弹出原生对话框提示用户。用户确认后，再次请求并带上 <code>confirm_pay=1</code> 参数即可扣费下载。<br>
+                • <strong>二次下载免费：</strong> 接口会自动查询购买记录。一旦用户支付过该附件，后续重复调用将直接返回授权链接，不会重复扣费。<br>
+                • <strong>下载链接时效：</strong> 返回的 <code>download_url</code> 具有时效性，建议获取后立即执行下载任务。
+            </div>
+
+            <h4>1. 请求参数</h4>
+            <table class="params-table">
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>aid</td><td>Int</td><td><span class="required">是</span></td><td>附件唯一 ID。</td></tr>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>操作用户 UID。</td></tr>
+                    <tr><td>confirm_pay</td><td>Int</td><td>否</td><td>是否确认支付：<code>0</code> (默认，仅询价检查), <code>1</code> (确认执行扣费)。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>2. 调用示例</h4>
+            <div class="code-container">
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式:</div>
+                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=attachment_download&aid=4482&uid=1&confirm_pay=1"</pre>
+                
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式:</div>
+                <pre>
+Request request = new Request.Builder()
+    .url("http://你的域名/plugin.php?id=codeium_api:api&key=KEY&action=attachment_download&aid=4482&uid=1&confirm_pay=1")
+    .build();</pre>
+            </div>
+            
+            <h4>3. 返回字段说明</h4>
+            <table>
+                <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>code</td><td>Int</td><td><b>0:</b> 成功授权；<b>1:</b> 需确认支付；<b>负数:</b> 错误。</td></tr>
+                    <tr><td>data.download_url</td><td>String</td><td>最终授权下载链接（仅在 code=0 时返回）。</td></tr>
+                    <tr><td>data.price</td><td>Int</td><td>附件售价。</td></tr>
+                    <tr><td>data.credit_name</td><td>String</td><td>计费积分名称（如：宝宝币）。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>4. 成功响应示例</h4>
+            <pre>
+{
+    "code": 0,
+    "message": "Success",
+    "data": {
+        "aid": 4482,
+        "is_paid": 0,
+        "download_url": "http://你的域名/forum.php?mod=attachment&aid=NDQ4Mnw0ODVkYTA3N..."
+    }
+}</pre>
+
+            <h4>5. 需支付提醒示例 (code=1)</h4>
+            <pre>
+{
+    "code": 1,
+    "message": "Need confirmation",
+    "data": {
+        "price": 5,
+        "credit_name": "宝宝币",
+        "credit_unit": "个"
+    }
+}</pre>
+        </div>
+    </div>
+</div>
+
 <!-------互动与社区------->
 
 <!-- 回帖列表获取 -->
@@ -3146,7 +3228,7 @@ Request request = new Request.Builder().url(url).post(body).build();</pre>
             <div class="code-container">
                 <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式：</div>
                 <pre>curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
-     -d "key=你的密钥" \
+     -d "key=你的API密钥" \
      -d "action=post_rate" \
      -d "uid=1" \
      -d "pid=55620" \
@@ -4292,124 +4374,73 @@ public class AccountVerifier {
     </div>
 </div>
 
-<!-- 新用户注册 -->
+<!-- 注册触发接口 -->
 <div id="register" class="section">
-    <h2>新用户注册 <span class="badge bg-stop">已停用</span></h2>
+    <h2>注册接口 <span class="badge bg-new">复活！！！</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: register</h3>
             <div><span class="method-tag post">POST</span></div>
         </div>
         <div class="api-body">
-            <h2><strong>由于注册过程中涉及大量复杂操作，导致我和我的小AI也都没搞明白到底是怎么进行的，而且互联网上几乎查找不到相关资料，所以本API停用，待大佬解决后再启用，注册时可以通过内置webview，直接使用网站原注册页面进行注册</strong></h2>
-            <p>触发注册流程。接口会校验邮箱的唯一性，通过校验后，系统将向该邮箱发送一封包含<b>网页注册链接</b>的邮件。用户需在邮件中点击链接，跳转至浏览器完成后续的用户名和密码设置。</p>
+            <p>触发官方原生的“邮件验证注册”逻辑。该接口深度集成了 Discuz! 站点的所有安全策略（IP 限制、邮箱黑白名单、邀请码校验），验证通过后将发送带官方 Hash 的激活邮件。</p>
             
-            <div class="endpoint-box">POST /plugin.php?id=codeium_api:api</div>
+            <div class="endpoint-box">POST /plugin.php?id=codeium_api:api&key=你的API密钥&action=register</div>
+
+            <h4>注意事项</h4>
+            <div class="note">
+                • <strong>时效性同步：</strong> 生成的链接有效期为 <strong>3 天（72小时）</strong>，与 Discuz! 默认邮件模板保持一致。<br>
+                • <strong>参数预填充：</strong> 邮件链接已自动携带 <code>email</code> 参数，用户点击后无需再次输入邮箱，直接进入用户名/密码设置环节。<br>
+                • <strong>安全拦截：</strong> 若调用时触发 <code>-22</code> 或 <code>-23</code> 错误，请检查后台“全局 -> 注册与访问控制”中的 IP 限制及邮箱域名限制设置。
+            </div>
 
             <h4>1. 请求参数</h4>
             <table class="params-table">
-                <thead>
-                    <tr>
-                        <th>参数名</th>
-                        <th>类型</th>
-                        <th>必选</th>
-                        <th>描述</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
                 <tbody>
-                    <tr>
-                        <td>action</td>
-                        <td>String</td>
-                        <td><span class="required">是</span></td>
-                        <td>固定值：<code>register</code></td>
-                    </tr>
-                    <tr>
-                        <td>email</td>
-                        <td>String</td>
-                        <td><span class="required">是</span></td>
-                        <td>用户的邮箱地址。</td>
-                    </tr>
-                    <tr>
-                        <td>key</td>
-                        <td>String</td>
-                        <td><span class="required">是</span></td>
-                        <td>您的 API 安全密钥。</td>
-                    </tr>
+                    <tr><td>email</td><td>String</td><td><span class="required">是</span></td><td>待注册邮箱。</td></tr>
+                    <tr><td>invitecode</td><td>String</td><td><span class="optional">注</span></td><td>邀请码。站点设为“仅邀请”时为必填。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
                 </tbody>
             </table>
 
-            <div class="note">
-                <strong>📧 流程说明：</strong><br>
-                1. <strong>App 端：</strong> 用户输入邮箱 -> 调用此接口。<br>
-                2. <strong>服务端：</strong> 校验邮箱未被占用 -> 发送邮件。<br>
-                3. <strong>用户端：</strong> 收到邮件 -> 点击链接 -> 跳转到 Discuz! 原生网页完成注册。<br>
-                此模式完全遵循站点的“强制邮箱验证”策略，避免 API 直接创建僵尸账号。
-            </div>
-
             <h4>2. 调用示例</h4>
             <div class="code-container">
-                <!-- Curl 示例 -->
-                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式：</div>
-                <pre>
-curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
-     -d "key=你的API密钥" \
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式:</div>
+                <pre>curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
+     -d "key=你的密钥" \
      -d "action=register" \
-     -d "email=newuser@example.com"</pre>
-     
-     <!-- Java 示例 -->
-                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式：</div>
+     -d "email=test@example.com"</pre>
+                
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式:</div>
                 <pre>
-import okhttp3.FormBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-
-public class UserRegister {
-    public static void main(String[] args) throws Exception {
-        OkHttpClient client = new OkHttpClient();
-
-        // 构造请求数据，仅需传递邮箱
-        RequestBody formBody = new FormBody.Builder()
-                .add("id", "codeium_api:api")
-                .add("key", "你的API密钥")
-                .add("action", "register")
-                .add("email", "test@example.com")
-                .build();
-
-        Request request = new Request.Builder()
-                .url("http://你的域名/plugin.php")
-                .post(formBody)
-                .build();
-
-        try (Response response = client.newCall(request).execute()) {
-            if (response.isSuccessful()) {
-                System.out.println("邮件发送结果: " + response.body().string());
-            } else {
-                System.err.println("请求失败: " + response.code());
-            }
-        }
-    }
-}</pre>
+RequestBody body = new FormBody.Builder()
+    .add("id", "codeium_api:api")
+    .add("key", "你的密钥")
+    .add("action", "register")
+    .add("email", "test@example.com")
+    .build();
+Request request = new Request.Builder().url(url).post(body).build();</pre>
             </div>
-
+            
             <h4>3. 成功响应示例</h4>
             <pre>
 {
     "code": 0,
-    "message": "Registration link sent to your email",
-    "data": {
-        "email": "newuser@example.com",
-        "status": "sent"
-    }
+    "message": "Success: Registration link sent",
+    "data": { "email": "test@example.com" }
 }</pre>
-            
-            <h4>4. 错误响应示例</h4>
-            <pre>
-{
-    "code": -5,
-    "message": "Email already exists" // 邮箱已被注册
-}</pre>
+
+            <h4>4. 模块私有错误码</h4>
+            <table>
+                <thead><tr><th>状态码</th><th>含义</th><th>详细说明</th></tr></thead>
+                <tbody>
+                    <tr><td>-5</td><td>邮箱占用</td><td>该邮箱已在本站注册过账号。</td></tr>
+                    <tr><td>-21</td><td>邀请码无效</td><td>邀请码不存在、已过期或已被使用。</td></tr>
+                    <tr><td>-22</td><td>IP 限制</td><td>该 IP 处于黑名单中，或 24 小时内注册量已达上限。</td></tr>
+                    <tr><td>-23</td><td>邮件域受限</td><td>该邮箱所属后缀（如 @qq.com）被禁止注册或未在白名单内。</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
