@@ -285,10 +285,11 @@ document.addEventListener('DOMContentLoaded', () => {
         <ul>
             <li><a href="#post_list">回帖列表获取 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#post_reply">发表回复/评论<span class="badge bg-upd">更新</span></a></li></a></li>
+            <li><a href="#post_appraise">回帖投票/表态<span class="badge bg-new">新增</span></a></li></a></li>
             <li><a href="#check_unread">全局未读检查 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#notifications">系统提醒中心 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#send_notification">管理发送提醒</a></li>
-            <li><a href="#favorite_forum">收藏/取消 版块 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#favorite_forum">添加/删除收藏版块 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#favorite_thread">添加/删除收藏帖子 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#favorite_list">用户收藏列表 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#post_like">点赞/支持接口 <span class="badge bg-new">新增</span></a></li>
@@ -322,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <ul>
             <li><a href="#login">用户登录/授权</a></li>
             <li><a href="#verify_account">账号静默验证</a></li>
-            <li><a href="#register">新用户注册 <span class="badge bg-new">复活！！</span></a></li>
+            <li><a href="#register">注册接口 <span class="badge bg-new">复活</span></a></li>
             <li><a href="#userinfo">个人资料/积分 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#update_profile">修改个人资料 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#upload_avatar">修改用户头像  <span class="badge bg-new">新增</span></a></li>
@@ -341,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="main-content">
     <div class="header-section">
         <h1>Discuz! API Plugin 接口文档</h1>
-        <p>版本: 2.5 | 最后更新: 2026-1-7 | 基准地址: <code>http://你的域名/plugin.php</code></p>
+        <p>版本: 2.6 | 最后更新: 2026-1-8 | 基准地址: <code>http://你的域名/plugin.php</code></p>
         <p>实时进度：<code><a href="https://todo.mrgeda.top/">https://todo.mrgeda.top/</a></code></p>
         <p>项目仓库：<code><a href="https://github.com/wkywky123123/DiscuzX3_5_API/" target="_blank">https://github.com/wkywky123123/DiscuzX3_5_API/</a></code></p>
     </div>
@@ -1859,7 +1860,7 @@ public class PostEditor {
 
 <!-- 编辑/删除投票贴 -->
 <div id="edit_poll" class="section">
-    <h2>编辑投票贴 <span class="badge bg-upd">JSON Body 模式</span></h2>
+    <h2>编辑/删除投票贴 <span class="badge bg-upd">JSON Body 模式</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: edit_poll</h3>
@@ -2194,19 +2195,19 @@ Request request = new Request.Builder()
 
 <!-- 回帖列表获取 -->
 <div id="post_list" class="section">
-    <h2> 回帖列表获取 <span class="badge bg-upd">楼层详情</span></h2>
+    <h2>回帖列表获取 <span class="badge bg-upd">更新</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: post_list</h3>
             <div><span class="method-tag get">GET</span></div>
         </div>
         <div class="api-body">
-            <p>获取指定主题（TID）下的回复列表。该接口会自动过滤掉“楼主贴”（first=1），仅返回下方的回帖内容，并按楼层顺序排列。内容中的图片标签已被自动解析。</p>
+            <p>分页获取指定主题（TID）下的回帖列表（自动排除楼主贴）。该接口具备<b>动态功能识别</b>逻辑：能自动判断站点是否开启“回帖点赞/表态”功能，并提供每层楼的<b>评分总数</b>、<b>点赞总数</b>以及当前用户的<b>实时互动状态</b>。</p>
             
-            <div class="endpoint-box">GET /plugin.php?id=codeium_api:api&key=你的API密钥&action=post_list&tid={tid}&page={page}</div>
+            <div class="endpoint-box">GET /plugin.php?id=codeium_api:api&key=你的API密钥&action=post_list&tid={tid}&uid={uid}&page={page}</div>
 
             <h4>1. 请求参数</h4>
-            <table>
+            <table class="params-table">
                 <thead>
                     <tr>
                         <th>参数名</th>
@@ -2221,6 +2222,12 @@ Request request = new Request.Builder()
                         <td>Int</td>
                         <td><span class="required">是</span></td>
                         <td>主题唯一 ID (TID)。</td>
+                    </tr>
+                    <tr>
+                        <td>uid</td>
+                        <td>Int</td>
+                        <td><span class="optional">否</span></td>
+                        <td>当前登录用户 UID。<strong>传入此值可实时获取每层楼的点赞、评分、收藏状态。</strong></td>
                     </tr>
                     <tr>
                         <td>page</td>
@@ -2238,54 +2245,39 @@ Request request = new Request.Builder()
                         <td>key</td>
                         <td>String</td>
                         <td><span class="required">是</span></td>
-                        <td>您的 API 安全密钥</td>
+                        <td>您的 API 安全密钥。</td>
                     </tr>
                 </tbody>
             </table>
 
             <div class="note">
-                <strong>💡 开发建议：</strong><br>
-                1. <strong>楼层排序：</strong> 接口固定按 <code>dateline ASC</code>（时间升序）排列，即沙发、板凳的顺序展示。<br>
-                2. <strong>楼层标识：</strong> <code>position</code> 字段代表该贴在论坛中的真实楼层号。<br>
-                3. <strong>内容解析：</strong> 与帖子详情接口一致，<code>content</code> 字段已将图片附件解析为 HTML 标签。
+                <strong>⚡ 性能与交互说明：</strong><br>
+                1. <strong>批量查询优化：</strong> 接口采用 IN 子查询批量检索用户互动状态。即使单页展示 100 条回帖，也不会对数据库造成循环压力。<br>
+                2. <strong>动态识别 (post_appraise_open)：</strong> 该字段标识站点是否允许对“单条回复”点赞。若为 0，App 仅需在底部显示一个总点赞按钮；若为 1，则每一楼都应显示点赞图标。<br>
+                3. <strong>互动逻辑：</strong> <code>is_rated</code> 对应单层楼状态；<code>is_liked</code> 会根据站点设置自动切换“楼层点赞”或“主题点赞”状态；<code>is_favorited</code> 始终同步主题收藏状态。
             </div>
 
             <h4>2. 调用示例</h4>
             <div class="code-container">
                 <!-- Curl 示例 -->
                 <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式：</div>
-                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=post_list&tid=10086&page=1"</pre>
+                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的密钥&action=post_list&tid=1521&uid=1&page=1"</pre>
                 
                 <!-- Java 示例 -->
                 <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式：</div>
                 <pre>
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+OkHttpClient client = new OkHttpClient().newBuilder().build();
+HttpUrl url = HttpUrl.parse("http://你的域名/plugin.php").newBuilder()
+    .addQueryParameter("id", "codeium_api:api")
+    .addQueryParameter("key", "你的密钥")
+    .addQueryParameter("action", "post_list")
+    .addQueryParameter("tid", "1521")
+    .addQueryParameter("uid", "1")
+    .addQueryParameter("page", "1")
+    .build();
 
-public class ReplyListFetcher {
-    public static void main(String[] args) throws Exception {
-        OkHttpClient client = new OkHttpClient();
-
-        // 构建带分页参数的请求 URL
-        HttpUrl url = HttpUrl.parse("http://你的域名/plugin.php").newBuilder()
-                .addQueryParameter("id", "codeium_api:api")
-                .addQueryParameter("key", "你的API密钥")
-                .addQueryParameter("action", "post_list")
-                .addQueryParameter("tid", "10086")
-                .addQueryParameter("page", "1")
-                .build();
-
-        Request request = new Request.Builder().url(url).build();
-
-        try (Response response = client.newCall(request).execute()) {
-            if (response.isSuccessful()) {
-                System.out.println("回帖列表: " + response.body().string());
-            }
-        }
-    }
-}</pre>
+Request request = new Request.Builder().url(url).build();
+Response response = client.newCall(request).execute();</pre>
             </div>
 
             <h4>3. 返回字段说明</h4>
@@ -2298,14 +2290,17 @@ public class ReplyListFetcher {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td>total</td><td>Int</td><td>当前主题下的总回复数</td></tr>
-                    <tr><td>total_page</td><td>Int</td><td>总页数</td></tr>
-                    <tr><td>list</td><td>Array</td><td>回复列表数组</td></tr>
-                    <tr><td>pid</td><td>String</td><td>回复贴的唯一 ID</td></tr>
-                    <tr><td>position</td><td>Int</td><td>楼层号 (如 2 代表沙发)</td></tr>
-                    <tr><td>content</td><td>String</td><td><b>完整 HTML 正文</b> (包含解析后的图片标签)</td></tr>
-                    <tr><td>author</td><td>String</td><td>回帖人用户名</td></tr>
-                    <tr><td>dateline</td><td>String</td><td>友好格式的时间（如：30分钟前）</td></tr>
+                    <tr><td>post_appraise_open</td><td>Int</td><td><b>动态开关：</b>1=站点支持单楼点赞，0=仅支持主题点赞。</td></tr>
+                    <tr><td>total / total_page</td><td>Int</td><td>回帖总数 / 总页数。</td></tr>
+                    <tr><td>list</td><td>Array</td><td>回帖列表。</td></tr>
+                    <tr><td>pid</td><td>Int</td><td><b>回帖 ID</b>。执行“评分”操作时必须使用此 ID。</td></tr>
+                    <tr><td>support</td><td>Int</td><td>该楼层获得的<b>点赞/表态总数</b>。</td></tr>
+                    <tr><td>ratetimes</td><td>Int</td><td>该楼层累计被<b>评分的总次数</b>。</td></tr>
+                    <tr><td>content</td><td>String</td><td>HTML 正文（图片附件已解析）。</td></tr>
+                    <tr><td><b>user_interaction</b></td><td>Object</td><td><b>当前用户互动状态对象：</b></td></tr>
+                    <tr><td>is_liked</td><td>Int</td><td>1=已点赞，0=未点赞。</td></tr>
+                    <tr><td>is_rated</td><td>Int</td><td>1=已评分，0=未评分。</td></tr>
+                    <tr><td>is_favorited</td><td>Int</td><td>1=已收藏该贴，0=未收藏。</td></tr>
                 </tbody>
             </table>
 
@@ -2315,31 +2310,27 @@ public class ReplyListFetcher {
     "code": 0,
     "message": "Success",
     "data": {
+        "post_appraise_open": 1,
         "total": 45,
         "page": 1,
         "total_page": 3,
         "list": [
             {
-                "pid": "55015",
-                "tid": "10086",
-                "position": 2,
-                "content": "写的不错，支持一下！",
+                "pid": "55621",
+                "tid": "1521",
                 "author": "小宝贝A",
                 "authorid": "205",
-                "username": "小宝贝A",
+                "avatar": "http://域名/uc_server/avatar.php?uid=205&size=small",
                 "dateline": "30分钟前",
-                "status": "0"
-            },
-            {
-                "pid": "55020",
-                "tid": "10086",
-                "position": 3,
-                "content": "我也想去看看 &lt;img src=\"...\" class=\"api-image\" /&gt;",
-                "author": "测试君",
-                "authorid": "108",
-                "username": "测试君",
-                "dateline": "10分钟前",
-                "status": "0"
+                "position": 2,
+                "support": 12,
+                "ratetimes": 1,
+                "user_interaction": {
+                    "is_liked": 1,
+                    "is_favorited": 1,
+                    "is_rated": 1
+                },
+                "content": "写的不错，支持一下！"
             }
         ]
     }
@@ -2498,6 +2489,97 @@ public class ReplyPoster {
         "dateline": 1735387520
     }
 }</pre>
+        </div>
+    </div>
+</div>
+
+<!-- 回帖投票/表态接口 -->
+<div id="post_appraise" class="section">
+    <h2>回帖投票/表态 <span class="badge bg-new">互动增强</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: post_appraise</h3>
+            <div><span class="method-tag post">POST</span></div>
+        </div>
+        <div class="api-body">
+            <p>对指定的回帖楼层（PID）进行“支持”或“反对”操作。接口会自动识别站点后台的“回帖投票”开关状态，支持重复投票拦截、自我投票拦截，并向作者发送实时的交互式提醒。</p>
+            
+            <div class="endpoint-box">POST /plugin.php?id=codeium_api:api&key=你的API密钥&action=post_appraise</div>
+
+            <h4>注意事项</h4>
+            <div class="note">
+                • <strong>功能依赖：</strong> 建议在调用前检查 <code>post_list</code> 接口返回的 <code>post_appraise_open</code> 标识。若该标识为 0，本接口将返回错误码 <code>-9</code>。<br>
+                • <strong>不可逆性：</strong> 受 Discuz! 原生逻辑限制，回帖投票操作为<b>不可撤销</b>行为。一旦用户点击了“支持”或“反对”，无法通过接口取消或更改。<br>
+                • <strong>交互通知：</strong> 仅在执行“支持 (add)”操作且非本人帖子时，作者会收到带跳转链接的提醒。执行“反对 (against)”操作为静默行为。
+            </div>
+
+            <h4>1. 请求参数</h4>
+            <table class="params-table">
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>操作用户 UID。</td></tr>
+                    <tr><td>pid</td><td>Int</td><td><span class="required">是</span></td><td>目标回帖的 <b>PID</b>（通过回复列表接口获得）。</td></tr>
+                    <tr><td>do</td><td>String</td><td>否</td><td><b>投票指令：</b><code>add</code> (支持/赞，默认), <code>against</code> (反对/踩)。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>2. 调用示例</h4>
+            <div class="code-container">
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式 (反对/踩):</div>
+                <pre>curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
+     -d "key=你的密钥" \
+     -d "action=post_appraise" \
+     -d "uid=1" \
+     -d "pid=55621" \
+     -d "do=against"</pre>
+                
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式 (支持/赞):</div>
+                <pre>
+RequestBody body = new FormBody.Builder()
+    .add("id", "codeium_api:api")
+    .add("key", "你的密钥")
+    .add("action", "post_appraise")
+    .add("uid", "1")
+    .add("pid", "55621")
+    .add("do", "add")
+    .build();
+Request request = new Request.Builder().url(url).post(body).build();
+Response response = client.newCall(request).execute();</pre>
+            </div>
+            
+            <h4>3. 返回字段说明</h4>
+            <table>
+                <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>code</td><td>Int</td><td>0=成功，负数为拦截。</td></tr>
+                    <tr><td>message</td><td>String</td><td>操作结果描述。</td></tr>
+                    <tr><td>data.type</td><td>String</td><td>执行的操作类型：<code>support</code> (支持) 或 <code>against</code> (反对)。</td></tr>
+                    <tr><td>data.current_count</td><td>Int</td><td>该楼层在操作完成后的<b>最新票数总计</b>。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>4. 成功响应示例 (执行支持)</h4>
+            <pre>
+{
+    "code": 0,
+    "message": "Successfully supported the post.",
+    "data": {
+        "pid": 55621,
+        "type": "support",
+        "current_count": 15
+    }
+}</pre>
+
+            <h4>5. 模块私有错误码</h4>
+            <table>
+                <thead><tr><th>状态码</th><th>含义</th><th>详细说明</th></tr></thead>
+                <tbody>
+                    <tr><td>-9</td><td>功能关闭/权限拒绝</td><td>1. 站点未开启回帖投票功能；2. 试图给自己发布的楼层投票。</td></tr>
+                    <tr><td>-15</td><td>重复投票</td><td>当前用户已经对此楼层进行过表态，不可再次投票。</td></tr>
+                    <tr><td>-8</td><td>帖子无效</td><td>指定的 PID 不存在，或该回复已被管理员删除。</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -2893,7 +2975,7 @@ public class AdminNotifier {
 
 <!-- 收藏/取消 版块 -->
 <div id="favorite_forum" class="section">
-    <h2>收藏/取消 版块 <span class="badge bg-new">新增模块</span></h2>
+    <h2>添加/取消收藏版块 <span class="badge bg-new">新增模块</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: favorite_forum</h3>
@@ -2967,7 +3049,7 @@ Response response = client.newCall(request).execute();</pre>
 
 <!-- 收藏/取消 帖子 -->
 <div id="favorite_thread" class="section">
-    <h2>收藏/取消 帖子 <span class="badge bg-new">新增模块</span></h2>
+    <h2>添加/取消收藏帖子 <span class="badge bg-new">新增模块</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: favorite_thread</h3>
@@ -3040,7 +3122,7 @@ Request request = new Request.Builder().url(url).post(body).build();</pre>
 
 <!-- 用户收藏列表 -->
 <div id="favorite_list" class="section">
-    <h2>我的收藏列表 <span class="badge bg-new">新增板块</span></h2>
+    <h2>用户收藏列表 <span class="badge bg-new">新增板块</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: favorite_list</h3>

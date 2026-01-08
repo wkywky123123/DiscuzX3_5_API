@@ -60,6 +60,8 @@
 codeium_api/
 ├── template/
 │   └── post_reply.htm
+├── action/
+│   └── *.inc.php
 ├── admincp.inc.php
 ├── api.inc.php
 ├── api_doc.html
@@ -71,7 +73,11 @@ codeium_api/
 #### `api.inc.php`
 
 * API 主入口
-* 核心逻辑集中地
+
+#### `/action`
+* 所有接口的实现文件都在这个目录下
+* 每个接口对应一个.inc.php文件
+* 文件名前半部分就是接口的action名称
 
 #### `api_doc.html`
 
@@ -130,6 +136,7 @@ api_doc.html
 * 所有接口统一通过 `api.inc.php` 进入
 * 根据 `action` 分发逻辑
 * 返回数据必须是 JSON
+* 模块化后模板文件为action目录下的.inc.php
 * 不要完全信任客户端传参
   >一定要鉴权！！！
   >你永远都不知道你的用户会搞什么骚操作！！！
