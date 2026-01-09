@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <li><a href="#album_content">相册内容详情 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#upload_album_pic">上传图片到相册 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#user_list">全站用户搜索</a></li>
-            <li><a href="#credit">积分变更操作</a></li>
+            <li><a href="#credit">积分变更操作<span class="badge bg-upd">更新</span></a></li>
         </ul>
     </div>
 </div>
@@ -342,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="main-content">
     <div class="header-section">
         <h1>Discuz! API Plugin 接口文档</h1>
-        <p>版本: 2.6 | 最后更新: 2026-1-8 | 基准地址: <code>http://你的域名/plugin.php</code></p>
+        <p>版本: 2.6 | 最后更新: 2026-1-9 | 基准地址: <code>http://你的域名/plugin.php</code></p>
         <p>实时进度：<code><a href="https://todo.mrgeda.top/">https://todo.mrgeda.top/</a></code></p>
         <p>项目仓库：<code><a href="https://github.com/wkywky123123/DiscuzX3_5_API/" target="_blank">https://github.com/wkywky123123/DiscuzX3_5_API/</a></code></p>
     </div>
@@ -5786,14 +5786,14 @@ public class UserSearchTask {
 
 <!-- 积分变更操作 -->
 <div id="credit" class="section">
-    <h2>积分变更操作</h2>
+    <h2>积分变更操作 <span class="badge bg-upd">增加余额预检</span></h2>
     <div class="api-card">
         <div class="api-header">
             <h3>Action: credit</h3>
             <div><span class="method-tag post">POST</span></div>
         </div>
         <div class="api-body">
-            <p>对指定用户的扩展积分进行加减操作。该接口受 Discuz! 后台积分设置约束，仅能操作已启用的积分项。执行成功后，系统会自动发送提醒通知给用户，并记录操作日志。</p>
+            <p>对指定用户的扩展积分进行加减操作。该接口受 Discuz! 后台积分设置约束，仅能操作已启用的积分项。接口内置了<b>余额充足性检查</b>，防止恶意扣除或数据库异常。执行成功后，系统会自动发送提醒通知给用户，并记录操作日志。</p>
             
             <div class="endpoint-box">POST /plugin.php?id=codeium_api:api</div>
 
@@ -5836,7 +5836,7 @@ public class UserSearchTask {
                         <td>reason</td>
                         <td>String</td>
                         <td><span class="optional">否</span></td>
-                        <td><b>变更原因：</b>将记录在日志中并展示在用户的通知详情里。</td>
+                        <td><b>变更原因：</b>记录在日志中并展示给用户。默认：<code>API Operation</code>。</td>
                     </tr>
                     <tr>
                         <td>key</td>
@@ -5848,61 +5848,42 @@ public class UserSearchTask {
             </table>
 
             <div class="note">
-                <strong>💰 积分逻辑说明：</strong><br>
-                1. <strong>安全性：</strong> 接口会自动校验该积分项在 Discuz! 后台是否已启用。未启用的积分项将返回 <code>code: -7</code>。<br>
-                2. <strong>自动化提醒：</strong> 用户会收到类似“您的 金钱 有变动：+10。原因：App任务奖励”的系统通知。<br>
-                3. <strong>常用参考：</strong> 在大多数 Discuz! 站点中，<code>extcredits2</code> 通常被设置为“金钱”或“金币”。
+                <strong>💰 积分逻辑与安全说明：</strong><br>
+                1. <strong>余额预检：</strong> 若 <code>value</code> 为负数（扣分操作），接口会先检查用户当前余额。若余额不足，将拦截请求并返回错误码 <code>-20</code>。<br>
+                2. <strong>启用校验：</strong> 接口会自动校验该积分项在 Discuz! 后台是否已启用。未启用的积分项将返回 <code>code: -7</code>。<br>
+                3. <strong>实时同步：</strong> 成功后返回 <code>new_value</code>，App 端可直接用于更新本地 UI 余额，无需重新获取用户信息。
             </div>
 
             <h4>2. 调用示例</h4>
             <div class="code-container">
                 <!-- Curl 示例 -->
-                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式 (奖励 10 金币)：</div>
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式 (扣除 5 金币)：</div>
                 <pre>
 curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
      -d "key=你的API密钥" \
      -d "action=credit" \
-     -d "uid=1" \
-     -d "type=extcredits2" \
-     -d "value=10" \
-     -d "reason=App签到奖励"</pre>
+     -d "uid=16" \
+     -d "type=extcredits3" \
+     -d "value=-5" \
+     -d "reason=付费内容下载"</pre>
                 
                 <!-- Java 示例 -->
                 <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式：</div>
                 <pre>
-import okhttp3.FormBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+RequestBody formBody = new FormBody.Builder()
+        .add("id", "codeium_api:api")
+        .add("key", "你的API密钥")
+        .add("action", "credit")
+        .add("uid", "16")
+        .add("type", "extcredits3")
+        .add("value", "10") // 奖励10分
+        .add("reason", "任务奖励")
+        .build();
 
-public class CreditManager {
-    public static void main(String[] args) throws Exception {
-        OkHttpClient client = new OkHttpClient();
-
-        // 构造积分变更请求
-        RequestBody formBody = new FormBody.Builder()
-                .add("id", "codeium_api:api")
-                .add("key", "你的API密钥")
-                .add("action", "credit")
-                .add("uid", "1")
-                .add("type", "extcredits2")
-                .add("value", "10")
-                .add("reason", "App奖励")
-                .build();
-
-        Request request = new Request.Builder()
-                .url("http://你的域名/plugin.php")
-                .post(formBody)
-                .build();
-
-        try (Response response = client.newCall(request).execute()) {
-            if (response.isSuccessful()) {
-                System.out.println("变更结果: " + response.body().string());
-            }
-        }
-    }
-}</pre>
+Request request = new Request.Builder()
+        .url("http://你的域名/plugin.php")
+        .post(formBody)
+        .build();</pre>
             </div>
 
             <h4>3. 返回字段说明</h4>
@@ -5916,10 +5897,10 @@ public class CreditManager {
                 </thead>
                 <tbody>
                     <tr><td>uid</td><td>Int</td><td>目标用户 UID。</td></tr>
-                    <tr><td>credit_name</td><td>String</td><td>积分在后台定义的名称（如：金钱）。</td></tr>
-                    <tr><td>old_value</td><td>Int</td><td>变更前的余额。</td></tr>
+                    <tr><td>credit_name</td><td>String</td><td>积分在后台定义的名称（如：宝宝币）。</td></tr>
+                    <tr><td>old_value</td><td>Int</td><td>变更前的原始余额。</td></tr>
                     <tr><td>change_value</td><td>Int</td><td>本次请求提交的变更数值。</td></tr>
-                    <tr><td>new_value</td><td>Int</td><td>变更后的实时余额。</td></tr>
+                    <tr><td>new_value</td><td>Int</td><td>变更后的实时最终余额。</td></tr>
                 </tbody>
             </table>
 
@@ -5929,16 +5910,25 @@ public class CreditManager {
     "code": 0,
     "message": "Credit updated successfully",
     "data": {
-        "uid": 1,
-        "username": "admin",
-        "credit_type": "extcredits2",
-        "credit_name": "金钱",
-        "old_value": 500,
-        "change_value": 10,
-        "new_value": 510,
-        "reason": "App签到奖励"
+        "uid": 16,
+        "username": "testuser",
+        "credit_type": "extcredits3",
+        "credit_name": "金币",
+        "old_value": 100,
+        "change_value": -5,
+        "new_value": 95,
+        "reason": "付费内容下载"
     }
 }</pre>
+
+            <h4>5. 模块私有错误码</h4>
+            <table>
+                <thead><tr><th>状态码</th><th>含义</th><th>详细说明</th></tr></thead>
+                <tbody>
+                    <tr><td>-7</td><td>积分配置错误</td><td>积分代码格式不符（须为 extcredits1-8）或该积分项未在后台启用。</td></tr>
+                    <tr><td>-20</td><td>余额不足</td><td>当前操作为扣分，但用户余额不足以支付本次变更数值。</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
