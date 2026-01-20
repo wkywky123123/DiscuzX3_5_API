@@ -2,68 +2,98 @@
 /**
  * 模块：附件图片上传
  */
+
 if(!defined('IN_DISCUZ')) exit('Access Denied');
 
-    // 1. 基础校验
-    $uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0;
-    if(!$uid) {
-        api_return(-3, 'User ID is required');
+// 1. 基础校验
+$uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0;
+if(!$uid) api_return(-3, 'User ID is required');
+if (empty($_FILES['file'])) api_return(-3, 'No file uploaded');
+
+// 2. 【自适应路径加载】确保在所有 Discuz! 版本下都能找到类库
+$upload_loaded = false;
+$upload_paths = array(
+    DISCUZ_ROOT . './source/class/discuz/discuz_upload.php', 
+    DISCUZ_ROOT . './source/class/class_upload.php'
+);
+
+foreach ($upload_paths as $path) {
+    if (file_exists($path)) {
+        require_once $path;
+        $upload_loaded = true;
+        break;
     }
+}
 
-    // 检查是否有文件上传，Discuz 默认建议参数名为 'file'
-    if (!isset($_FILES['file'])) {
-        api_return(-3, 'No file uploaded (use parameter name "file")');
+if (!$upload_loaded) {
+    api_return(-10, 'Discuz core upload class not found.');
+}
+
+// 3. 执行初始化与物理保存 (类型为 'forum')
+$upload = new discuz_upload();
+
+if (!$upload->init($_FILES['file'], 'forum')) {
+    api_return(-10, 'Init Error: ' . $upload->errormessage());
+}
+
+if (!$upload->save()) {
+    api_return(-10, 'Save Error: ' . $upload->errormessage());
+}
+
+// 4. 【核心修复】强制补全图片元数据 (解决之前出现的 width 为 0 的问题)
+if($upload->attach['isimage'] && (empty($upload->attach['width']) || $upload->attach['width'] == 0)) {
+    $img_info = @getimagesize($upload->attach['target']);
+    if($img_info) {
+        $upload->attach['width'] = $img_info[0];
+        $upload->attach['height'] = $img_info[1];
     }
+}
 
-    // 2. 加载 Discuz 上传类
-    require_once libfile('class/upload');
-    $upload = new discuz_upload();
+// 5. 【核心逻辑】写入数据库（Unused 流程）
 
-    // 初始化上传，'forum' 表示存放在论坛附件目录
-    // init 会自动处理文件合法性检查（后缀、大小等）
-    $res = $upload->init($_FILES['file'], 'forum');
-    if(!$res) {
-        api_return(-10, 'Upload init failed: ' . $upload->errormessage());
-    }
+// A. 插入索引主表
+// tableid = 127 是 Discuz! 内部约定的“临时/未使用”标识位
+$aid = DB::insert('forum_attachment', array(
+    'uid' => $uid, 
+    'tableid' => 127, 
+    'tid' => 0, 
+    'pid' => 0
+), true);
 
-    // 3. 保存文件
-    // save() 会自动处理目录创建（按日期）、重命名等逻辑
-    $attach = $upload->save();
-    if(!$attach) {
-        api_return(-10, 'Save file failed: ' . $upload->errormessage());
-    }
+if(!$aid) {
+    api_return(-11, 'Database Error: Failed to generate AID');
+}
 
-    // 4. 将附件信息写入数据库（这一步才能产生 aid）
-    // 默认作为临时附件，等到发帖提交时再正式关联
-    $data = array(
-        'atid' => 0, // 还没关联到具体帖子，先填 0
-        'uid' => $uid,
-        'dateline' => TIMESTAMP,
-        'filename' => $attach['name'],
-        'filesize' => $attach['size'],
-        'attachment' => $attach['attachment'],
-        'isimage' => $attach['isimage'],
-        'thumb' => $attach['thumb'],
-        'remote' => $attach['remote'],
-        'width' => $attach['width'],
-    );
-    
-    // 生成全局唯一的 aid
-    $aid = C::t('forum_attachment')->insert(array('uid' => $uid, 'tableid' => 127), true);
-    // 写入具体的附件分表
-    C::t('forum_attachment_n')->insert('127', array_merge(array('aid' => $aid), $data));
+// B. 写入 pre_forum_attachment_unused 表
+// 只有写入这张表，官方后台和发帖页面才会出现“未使用附件”的提醒
+$unused_data = array(
+    'aid' => $aid,
+    'uid' => $uid,
+    'dateline' => TIMESTAMP,
+    'filename' => $upload->attach['name'],      // 原始文件名
+    'filesize' => $upload->attach['size'],      // 文件大小
+    'attachment' => $upload->attach['attachment'], // 物理存储路径（如 202601/xx.png）
+    'isimage' => $upload->attach['isimage'] ? 1 : 0,
+    'remote' => $upload->attach['remote'] ? 1 : 0,
+    'width' => intval($upload->attach['width']),
+);
 
-    // 5. 拼装返回结果
-    // 判断是远程还是本地附件
-    if($attach['remote']) {
-        $url = $_G['setting']['ftp']['attachurl'] . 'forum/' . $attach['attachment'];
-    } else {
-        $url = $_G['siteurl'] . 'data/attachment/forum/' . $attach['attachment'];
-    }
+DB::insert('forum_attachment_unused', $unused_data);
 
-    api_return(0, 'Upload success', array(
-        'aid' => $aid,             // 重要：App发帖时需要这个 ID
-        'url' => $url,             // 用于在 App 端即时预览
-        'width' => $attach['width'],
-        'filesize' => $attach['size']
-    ));
+// 6. 拼装最终可访问 URL (支持远程附件检测)
+loadcache('setting');
+$base_url = '';
+if ($upload->attach['remote']) {
+    $base_url = $_G['setting']['ftp']['attachurl'] . 'forum/';
+} else {
+    $base_url = $_G['siteurl'] . 'data/attachment/forum/';
+}
+
+// 7. 统一返回结果
+api_return(0, 'Upload success (Unused mode)', array(
+    'aid' => intval($aid),
+    'url' => $base_url . $upload->attach['attachment'],
+    'width' => intval($upload->attach['width']),
+    'filesize' => intval($upload->attach['size']),
+    'is_remote' => $upload->attach['remote'] ? 1 : 0
+));

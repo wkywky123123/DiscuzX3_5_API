@@ -276,6 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <li><a href="#edit_post">编辑/删除帖子 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#edit_poll">编辑/删除投票贴 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#upload_image">附件图片上传 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#unused_attachments">获取未使用附件 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#attachment_download">附件下载鉴权 <span class="badge bg-new">新增</span></a></li>
         </ul>
     </div>
@@ -331,8 +332,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <li><a href="#medal_list">全站勋章列表 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#my_threads">用户帖子列表 <span class="badge bg-upd">更新</span></a></li>
             <li><a href="#album_list">用户相册列表 <span class="badge bg-upd">更新</span></a></li>
+            <li><a href="#upload_album_pic">上传图片到相册 <span class="badge bg-upd">更新</span></a></li>
+            <li><a href="#edit_album">编辑/删除 相册 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#edit_album_pics">编辑相册图片内容 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#album_content">相册内容详情 <span class="badge bg-new">新增</span></a></li>
-            <li><a href="#upload_album_pic">上传图片到相册 <span class="badge bg-new">新增</span></a></li>
+            <li><a href="#sync_attach_to_album">同步附件到相册 <span class="badge bg-new">新增</span></a></li>
             <li><a href="#user_list">全站用户搜索</a></li>
             <li><a href="#credit">积分变更操作<span class="badge bg-upd">更新</span></a></li>
         </ul>
@@ -342,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="main-content">
     <div class="header-section">
         <h1>Discuz! API Plugin 接口文档</h1>
-        <p>版本: 2.6 | 最后更新: 2026-1-9 | 基准地址: <code>http://你的域名/plugin.php</code></p>
+        <p>版本: 2.6 | 最后更新: 2026-1-20 | 基准地址: <code>http://你的域名/plugin.php</code></p>
         <p>实时进度：<code><a href="https://todo.mrgeda.top/">https://todo.mrgeda.top/</a></code></p>
         <p>项目仓库：<code><a href="https://github.com/wkywky123123/DiscuzX3_5_API/" target="_blank">https://github.com/wkywky123123/DiscuzX3_5_API/</a></code></p>
     </div>
@@ -2104,6 +2108,91 @@ public class ImageUploader {
         "url": "https://你的域名/data/attachment/forum/202512/28/161045x.jpg",
         "width": 1080,
         "filesize": 256840
+    }
+}</pre>
+        </div>
+    </div>
+</div>
+
+<!-- 获取未使用附件 -->
+<div id="unused_attachments" class="section">
+    <h2>获取未使用附件 <span class="badge bg-new">素材库</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: unused_attachments</h3>
+            <div><span class="method-tag get">GET</span></div>
+        </div>
+        <div class="api-body">
+            <p>获取当前用户已上传但尚未关联到任何主题或回复的附件列表（即存放在 <code>unused</code> 中转表中的记录）。App 可利用此接口实现“历史未使用素材选择”功能。</p>
+            
+            <div class="endpoint-box">GET /plugin.php?id=codeium_api:api&key=你的API密钥&action=unused_attachments&uid={uid}</div>
+
+            <h4>注意事项</h4>
+            <div class="note">
+                • <strong>状态转换：</strong> 一旦附件通过 <code>new_thread</code> 或 <code>post_reply</code> 被引用，它将从本接口的列表中消失（自动转入正式附件表）。<br>
+                • <strong>清理机制：</strong> Discuz! 系统通常会定期清理长时间未使用的附件，请引导用户尽快关联发布。<br>
+                • <strong>应用场景：</strong> 当用户点击发帖按钮时，App 发现 <code>total > 0</code>，可弹窗提示：“您有未发布的图片，是否继续使用？”。
+            </div>
+
+            <h4>1. 请求参数</h4>
+            <table class="params-table">
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>操作用户 UID。</td></tr>
+                    <tr><td>page</td><td>Int</td><td>否</td><td>页码。</td></tr>
+                    <tr><td>perpage</td><td>Int</td><td>否</td><td>每页数量。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>2. 调用示例</h4>
+            <div class="code-container">
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式:</div>
+                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=unused_attachments&uid=1"</pre>
+                
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式:</div>
+                <pre>
+OkHttpClient client = new OkHttpClient();
+HttpUrl url = HttpUrl.parse("http://你的域名/plugin.php").newBuilder()
+    .addQueryParameter("id", "codeium_api:api")
+    .addQueryParameter("key", "你的API密钥")
+    .addQueryParameter("action", "unused_attachments")
+    .addQueryParameter("uid", "1")
+    .build();
+Request request = new Request.Builder().url(url).build();</pre>
+            </div>
+            
+            <h4>3. 返回字段说明</h4>
+            <table>
+                <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>total</td><td>Int</td><td>未使用附件的总数量。</td></tr>
+                    <tr><td>list</td><td>Array</td><td>附件对象列表。</td></tr>
+                    <tr><td>aid</td><td>Int</td><td>附件唯一 ID。<b>发帖时需引用此 ID。</b></td></tr>
+                    <tr><td>url</td><td>String</td><td>附件的绝对路径预览地址。</td></tr>
+                    <tr><td>is_image</td><td>Int</td><td>是否为图片：1=是，0=其他文件。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>4. 成功响应示例</h4>
+            <pre>
+{
+    "code": 0,
+    "message": "Success",
+    "data": {
+        "total": 1,
+        "page": 1,
+        "list": [
+            {
+                "aid": 4627,
+                "filename": "screenshot_01.png",
+                "filesize": "56.4 KB",
+                "url": "http://你的域名/data/attachment/forum/2026/01/xxx.png",
+                "is_image": 1,
+                "width": 1920,
+                "dateline": "2分钟前"
+            }
+        ]
     }
 }</pre>
         </div>
@@ -5364,6 +5453,244 @@ public class AlbumLoader {
     </div>
 </div>
 
+<!-- 上传图片到相册 -->
+<div id="upload_album_pic" class="section">
+    <h2>上传图片到相册 <span class="badge bg-upd">全功能版</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: upload_album_pic</h3>
+            <div><span class="method-tag post">POST</span></div>
+        </div>
+        <div class="api-body">
+            <p>全功能相册上传接口。支持直接上传至现有相册，或在上传时<b>即时创建新相册</b>。接口会自动处理封面设置及详细的相册描述信息。</p>
+            
+            <div class="endpoint-box">POST /plugin.php?id=codeium_api:api&action=upload_album_pic</div>
+
+            <h4>1. 请求参数</h4>
+            <table class="params-table">
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>操作者 UID。</td></tr>
+                    <tr><td>file</td><td>File</td><td><span class="required">是</span></td><td>图片二进制流。</td></tr>
+                    <tr><td>albumid</td><td>Int</td><td>否</td><td>追加模式：指定存入的相册 ID。</td></tr>
+                    <tr><td><b>new_album</b></td><td>Int</td><td>否</td><td>设为 <code>1</code> 开启现场新建相册模式。</td></tr>
+                    <tr><td><b>albumname</b></td><td>String</td><td>否</td><td>新建模式下的相册名称。</td></tr>
+                    <tr><td><b>depict</b></td><td>String</td><td>否</td><td><b>新建模式下的相册描述/简介。</b></td></tr>
+                    <tr><td>friend</td><td>Int</td><td>否</td><td>隐私等级：0公开, 1好友, 3私密, 4密码。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>2. 调用示例</h4>
+            <div class="code-container">
+                <div style="font-weight:bold; font-size:0.8rem; color:#64748b;">Curl (新建模式含描述):</div>
+                <pre>curl.exe -X POST "http://你的域名/plugin.php?id=codeium_api:api" `
+     -F "key=你的API密钥" -F "action=upload_album_pic" -F "uid=1" `
+     -F "new_album=1" -F "albumname=我的旅行日记" `
+     -F "depict=记录我在 2026 年去过的所有地方" `
+     -F "file=@D:\travel.jpg"</pre>
+     
+      <!-- Java 示例 -->
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式:</div>
+                <pre>
+import okhttp3.*;
+import java.io.File;
+import java.io.IOException;
+
+public class AlbumUploader {
+    public static void main(String[] args) throws IOException {
+        OkHttpClient client = new OkHttpClient();
+        File file = new File("D:\\travel.jpg");
+
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("id", "codeium_api:api")
+                .addFormDataPart("key", "你的API密钥")
+                .addFormDataPart("action", "upload_album_pic")
+                .addFormDataPart("uid", "1")
+                .addFormDataPart("new_album", "1") // 开启新建模式
+                .addFormDataPart("albumname", "我的新相册")
+                .addFormDataPart("depict", "这是相册描述内容")
+                .addFormDataPart("file", file.getName(),
+                        RequestBody.create(file, MediaType.parse("image/jpeg")))
+                .build();
+
+        Request request = new Request.Builder()
+                .url("http://你的域名/plugin.php")
+                .post(requestBody)
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            System.out.println(response.body().string());
+        }
+    }
+}</pre>
+            </div>
+            
+            <h4>3. 响应示例</h4>
+            <pre>{ "code": 0, "message": "Success", "data": { "albumid": 32, "picid": 501, "is_new_album": true } }</pre>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑/删除 相册 -->
+<div id="edit_album" class="section">
+    <h2>编辑/删除 相册 <span class="badge bg-upd">管理</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: edit_album</h3>
+            <div><span class="method-tag post">POST</span></div>
+        </div>
+        <div class="api-body">
+            <p>修改指定相册的名称、描述、隐私权限，或执行彻底删除操作。接口仅允许相册所有者本人进行操作。</p>
+            
+            <div class="endpoint-box">POST /plugin.php?id=codeium_api:api&key=你的API密钥&action=edit_album</div>
+
+            <h4>注意事项</h4>
+            <div class="note">
+                • <strong>删除影响：</strong> 设置 <code>delete=1</code> 将触发物理删除。根据 Discuz! 系统配置，相册内的图片可能会被同步删除或转入默认相册，操作不可逆，请谨慎调用。<br>
+                • <strong>隐私等级：</strong> <code>friend</code> 参数对应关系：0=公开, 1=仅好友, 2=指定好友, 3=仅自己, 4=凭密码。若设为 4，必须提供 <code>password</code> 参数。
+            </div>
+
+            <h4>1. 请求参数</h4>
+            <table class="params-table">
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>当前用户 UID。</td></tr>
+                    <tr><td>albumid</td><td>Int</td><td><span class="required">是</span></td><td>目标相册 ID。</td></tr>
+                    <tr><td>delete</td><td>Int</td><td>否</td><td>是否删除：<code>1</code>=删除，<code>0</code>=编辑(默认)。</td></tr>
+                    <tr><td>albumname</td><td>String</td><td>否</td><td>新相册名称。</td></tr>
+                    <tr><td>depict</td><td>String</td><td>否</td><td>相册描述。</td></tr>
+                    <tr><td>friend</td><td>Int</td><td>否</td><td>隐私等级 (0-4)。</td></tr>
+                    <tr><td>password</td><td>String</td><td>否</td><td>相册密码（仅当 friend 为 4 时有效）。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>2. 调用示例</h4>
+            <div class="code-container">
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式 (修改隐私为仅自己可见):</div>
+                <pre>curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
+     -d "key=你的API密钥" \
+     -d "action=edit_album" \
+     -d "uid=1" \
+     -d "albumid=15" \
+     -d "friend=3"</pre>
+                
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式 (彻底删除相册):</div>
+                <pre>
+RequestBody body = new FormBody.Builder()
+    .add("id", "codeium_api:api")
+    .add("key", "你的密钥")
+    .add("action", "edit_album")
+    .add("uid", "1")
+    .add("albumid", "15")
+    .add("delete", "1")
+    .build();
+Request request = new Request.Builder().url(url).post(body).build();</pre>
+            </div>
+            
+            <h4>3. 返回字段说明</h4>
+            <table>
+                <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>code</td><td>Int</td><td>0=成功，负数=失败。</td></tr>
+                    <tr><td>data.fields_updated</td><td>Array</td><td>编辑模式下，实际被修改的字段列表。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>4. 成功响应示例 (删除成功)</h4>
+            <pre>
+{
+    "code": 0,
+    "message": "Album deleted successfully",
+    "data": null
+}</pre>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑相册图片内容 -->
+<div id="edit_album_pics" class="section">
+    <h2>编辑相册图片 <span class="badge bg-upd">功能增强</span></h2>
+    <div class="api-card">
+        <div class="api-header">
+            <h3>Action: edit_album_pics</h3>
+            <div><span class="method-tag post">POST</span></div>
+        </div>
+        <div class="api-body">
+            <p>全功能批量管理接口。支持同时执行：修改多图描述、设置封面、批量删除、以及<b>将指定图片转移到另一个个人相册</b>。</p>
+            
+            <div class="endpoint-box">POST /plugin.php?id=codeium_api:api&key=你的API密钥&action=edit_album_pics</div>
+
+            <h4>注意事项</h4>
+            <div class="note">
+                • <strong>转移逻辑：</strong> 只有在 <code>move_to_album</code> (目标相册ID) 和 <code>move_ids</code> (图片ID串) 同时存在时才会执行移动操作。系统会自动更新源相册与目标相册的图片计数。<br>
+                • <strong>多重操作：</strong> 该接口支持在一次请求中同时删除 A 图、修改 B 图描述并移动 C 图到新相册。<br>
+                • <strong>安全性：</strong> 所有操作均强制校验图片与相册的 <code>uid</code> 归属权。
+            </div>
+
+            <h4>1. 请求参数</h4>
+            <table class="params-table">
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>操作者 UID。</td></tr>
+                    <tr><td>albumid</td><td>Int</td><td><span class="required">是</span></td><td>当前图片所在的源相册 ID。</td></tr>
+                    <tr><td>titles</td><td>Array</td><td>否</td><td><b>批量改名：</b>数组格式 <code>titles[picid]=新描述</code>。</td></tr>
+                    <tr><td>delete_ids</td><td>String</td><td>否</td><td><b>批量删除：</b>多个 picid 逗号分隔。</td></tr>
+                    <tr><td><b>move_to_album</b></td><td>Int</td><td>否</td><td><b>目标相册 ID：</b>要移入的相册 ID。</td></tr>
+                    <tr><td><b>move_ids</b></td><td>String</td><td>否</td><td><b>批量转移：</b>要移出的多张图片 picid 逗号分隔。</td></tr>
+                    <tr><td>set_cover</td><td>Int</td><td>否</td><td>设为封面的图片 picid。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>2. 调用示例</h4>
+            <div class="code-container">
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式 (编辑图片描述):</div>
+                <pre>curl.exe -X POST "https://你的域名/plugin.php?id=codeium_api:api" `
+     -d "key=3892hf9qp37x62xry275x9843yt73674298umc9y3cy3qr90432873290" `
+     -d "action=edit_album_pics" `
+     -d "uid=1" `
+     -d "albumid=15" `
+     -d "titles[101]=这是第一张图" `
+     -d "titles[102]=这是第二张图"</pre>
+                
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式 (转移图片到新相册):</div>
+                <pre>
+RequestBody body = new FormBody.Builder()
+    .add("id", "codeium_api:api")
+    .add("key", "你的API密钥")
+    .add("action", "edit_album_pics")
+    .add("uid", "1")
+    .add("albumid", "15")
+    .add("move_to_album", "20")
+    .add("move_ids", "101,102")
+    .build();</pre>
+            </div>
+            
+            <h4>3. 返回字段说明</h4>
+            <table>
+                <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
+                <tbody>
+                    <tr><td>code</td><td>Int</td><td>0=成功。</td></tr>
+                    <tr><td>data.current_picnum</td><td>Int</td><td>操作完成后，<b>源相册</b> (albumid) 内剩余的图片数量。</td></tr>
+                </tbody>
+            </table>
+
+            <h4>4. 成功响应示例</h4>
+            <pre>
+{
+    "code": 0,
+    "message": "Batch operation completed",
+    "data": {
+        "albumid": 15,
+        "current_picnum": 39
+    }
+}</pre>
+        </div>
+    </div>
+</div>
+
 <!-- 相册内容详情 -->
 <div id="album_content" class="section">
     <h2>相册内容详情 <span class="badge bg-upd">权限校验</span></h2>
@@ -5462,139 +5789,66 @@ public class AlbumDetailFetcher {
     </div>
 </div>
 
-<!-- 上传图片到相册 -->
-<div id="upload_album_pic" class="section">
-    <h2>上传图片到相册 <span class="badge bg-new">上传</span></h2>
+<!-- 同步附件到相册 -->
+<div id="sync_attach_to_album" class="section">
+    <h2>同步附件到相册 <span class="badge bg-new">发帖辅助</span></h2>
     <div class="api-card">
         <div class="api-header">
-            <h3>Action: upload_album_pic</h3>
+            <h3>Action: sync_attach_to_album</h3>
             <div><span class="method-tag post">POST</span></div>
         </div>
         <div class="api-body">
-            <p>将本地图片上传到指定的相册中。成功后会自动更新相册的图片数量和最后更新时间。如果相册没有封面，系统会自动将该图片设为封面。</p>
+            <p>在发帖或编辑帖子过程中，将用户本人已上传的图片附件<b>批量同步</b>到指定的个人相册中。该接口具有严格的归属权校验，确保用户只能同步自己的图片到自己的相册。</p>
             
-            <div class="endpoint-box">POST /plugin.php?id=codeium_api:api</div>
+            <div class="endpoint-box">POST /plugin.php?id=codeium_api:api&key=你的API密钥&action=sync_attach_to_album</div>
+
+            <h4>注意事项</h4>
+            <div class="note">
+                • <strong>权限守卫：</strong> 接口会逐一校验 <code>aids</code> 列表。只有属于当前 <code>uid</code> 且为图片类型的附件才会被执行同步，他人的附件将被自动忽略。<br>
+                • <strong>物理隔离：</strong> 同步过程中会执行文件复制操作。这意味着即使后续帖子被删除，相册中的图片依然会保留，互不影响。<br>
+                • <strong>调用时机：</strong> 建议在发帖成功（获取到 TID 后）或编辑保存时，根据用户勾选的附件 ID 进行调用。
+            </div>
 
             <h4>1. 请求参数</h4>
             <table class="params-table">
-                <thead>
-                    <tr>
-                        <th>参数名</th>
-                        <th>类型</th>
-                        <th>必选</th>
-                        <th>描述</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>参数名</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
                 <tbody>
-                    <tr>
-                        <td>action</td>
-                        <td>String</td>
-                        <td><span class="required">是</span></td>
-                        <td>固定值：<code>upload_album_pic</code></td>
-                    </tr>
-                    <tr>
-                        <td>uid</td>
-                        <td>Int</td>
-                        <td><span class="required">是</span></td>
-                        <td>上传者的 UID。必须是相册的所有者。</td>
-                    </tr>
-                    <tr>
-                        <td>albumid</td>
-                        <td>Int</td>
-                        <td><span class="required">是</span></td>
-                        <td>目标相册 ID。</td>
-                    </tr>
-                    <tr>
-                        <td><b>file</b></td>
-                        <td>File</td>
-                        <td><span class="required">是</span></td>
-                        <td><b>文件流：</b>表单参数名必须为 <code>file</code>。</td>
-                    </tr>
-                    <tr>
-                        <td>title</td>
-                        <td>String</td>
-                        <td><span class="optional">否</span></td>
-                        <td>图片描述/标题。</td>
-                    </tr>
-                    <tr>
-                        <td>key</td>
-                        <td>String</td>
-                        <td><span class="required">是</span></td>
-                        <td>您的 API 安全密钥。</td>
-                    </tr>
+                    <tr><td>uid</td><td>Int</td><td><span class="required">是</span></td><td>当前用户 UID。</td></tr>
+                    <tr><td>albumid</td><td>Int</td><td><span class="required">是</span></td><td>目标个人相册 ID。</td></tr>
+                    <tr><td>aids</td><td>String</td><td><span class="required">是</span></td><td><b>批量 ID 字符串：</b>多个 AID 用逗号分隔，如 <code>4627,4628</code>。</td></tr>
+                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>API 安全密钥。</td></tr>
                 </tbody>
             </table>
 
-            <div class="note">
-                <strong>⚠️ 区别说明：</strong><br>
-                此接口专门用于<b>相册系统</b> (Home 模块)，数据存入 <code>home_pic</code> 表。<br>
-                如果是发帖需要上传图片，请使用 <a href="#upload_image">upload_image</a> 接口。
-            </div>
-
             <h4>2. 调用示例</h4>
             <div class="code-container">
-                <!-- Curl 示例 -->
-                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式：</div>
-                <pre>
-curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
-     -H "Content-Type: multipart/form-data" \
-     -F "key=你的API密钥" \
-     -F "action=upload_album_pic" \
-     -F "uid=1" \
-     -F "albumid=15" \
-     -F "title=美丽的风景" \
-     -F "file=@/Users/admin/Photos/vacation.jpg"</pre>
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式:</div>
+                <pre>curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
+     -d "key=你的API密钥" \
+     -d "action=sync_attach_to_album" \
+     -d "uid=1" \
+     -d "albumid=15" \
+     -d "aids=4627,4628,4629"</pre>
                 
-                <!-- Java 示例 -->
-                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式：</div>
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式:</div>
                 <pre>
-import okhttp3.*;
-import java.io.File;
-
-public class AlbumUploader {
-    public static void main(String[] args) throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        File file = new File("/sdcard/DCIM/camera.jpg");
-
-        RequestBody requestBody = new MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("id", "codeium_api:api")
-                .addFormDataPart("key", "你的API密钥")
-                .addFormDataPart("action", "upload_album_pic")
-                .addFormDataPart("uid", "1")
-                .addFormDataPart("albumid", "15")
-                .addFormDataPart("title", "自拍一张")
-                .addFormDataPart("file", file.getName(),
-                        RequestBody.create(file, MediaType.parse("image/jpeg")))
-                .build();
-
-        Request request = new Request.Builder()
-                .url("http://你的域名/plugin.php")
-                .post(requestBody)
-                .build();
-
-        try (Response response = client.newCall(request).execute()) {
-            System.out.println("上传结果: " + response.body().string());
-        }
-    }
-}</pre>
+RequestBody body = new FormBody.Builder()
+    .add("id", "codeium_api:api")
+    .add("key", "你的API密钥")
+    .add("action", "sync_attach_to_album")
+    .add("uid", "1")
+    .add("albumid", "15")
+    .add("aids", "4627,4628")
+    .build();
+Request request = new Request.Builder().url(url).post(body).build();</pre>
             </div>
-
+            
             <h4>3. 返回字段说明</h4>
             <table>
-                <thead>
-                    <tr>
-                        <th>字段名</th>
-                        <th>类型</th>
-                        <th>描述</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>字段名</th><th>类型</th><th>描述</th></tr></thead>
                 <tbody>
-                    <tr><td>picid</td><td>Int</td><td>新生成的图片 ID</td></tr>
-                    <tr><td>albumid</td><td>Int</td><td>所属相册 ID</td></tr>
-                    <tr><td>url</td><td>String</td><td>图片的完整可访问 URL</td></tr>
-                    <tr><td>width</td><td>Int</td><td>图片宽度</td></tr>
-                    <tr><td>size</td><td>Int</td><td>文件大小 (Byte)</td></tr>
+                    <tr><td>success_count</td><td>Int</td><td>成功同步的图片数量。</td></tr>
+                    <tr><td>synced_list</td><td>Array</td><td>成功记录列表，包含原 <code>aid</code> 与新生成的 <code>picid</code> 对应关系。</td></tr>
                 </tbody>
             </table>
 
@@ -5602,13 +5856,14 @@ public class AlbumUploader {
             <pre>
 {
     "code": 0,
-    "message": "Upload album picture success",
+    "message": "Successfully synced 2 images to album",
     "data": {
-        "picid": 305,
-        "albumid": 15,
-        "url": "http://你的域名/data/attachment/album/202512/01/vacation.jpg",
-        "width": 1920,
-        "size": 524288
+        "total_requested": 2,
+        "success_count": 2,
+        "synced_list": [
+            { "aid": 4627, "picid": 308 },
+            { "aid": 4628, "picid": 309 }
+        ]
     }
 }</pre>
         </div>

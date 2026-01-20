@@ -2,155 +2,129 @@
 /**
  * 模块：发布新主题
  */
+
 if(!defined('IN_DISCUZ')) exit('Access Denied');
 
- $uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0;
-    $fid = isset($_REQUEST['fid']) ? intval($_REQUEST['fid']) : 0;
-    $typeid = isset($_REQUEST['typeid']) ? intval($_REQUEST['typeid']) : 0; // 新增主题分类ID
-    $subject = isset($_REQUEST['subject']) ? trim($_REQUEST['subject']) : '';
-    $message = isset($_REQUEST['message']) ? trim($_REQUEST['message']) : '';
-    
-    if(!$uid || !$fid || !$subject || !$message) {
-        api_return(-3, 'Missing required parameters');
-    }
+// 1. 参数获取
+$uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0;
+$fid = isset($_REQUEST['fid']) ? intval($_REQUEST['fid']) : 0;
+$typeid = isset($_REQUEST['typeid']) ? intval($_REQUEST['typeid']) : 0; 
+$subject = isset($_REQUEST['subject']) ? trim($_REQUEST['subject']) : '';
+$message = isset($_REQUEST['message']) ? trim($_REQUEST['message']) : '';
 
-    $member = C::t('common_member')->fetch($uid);
-    if(!$member) api_return(-6, 'User not found');
+if(!$uid || !$fid || !$subject || !$message) api_return(-3, 'Missing parameters');
 
-    // --- 核心修改：检查主题分类权限与强制性 ---
-    $forum = C::t('forum_forum')->fetch($fid);
-    $forumfield = C::t('forum_forumfield')->fetch($fid);
-    if(!$forum || $forum['status'] != 1) api_return(-7, 'Forum invalid');
+// 2. 权限与数据校验
+$member = C::t('common_member')->fetch($uid);
+if(!$member) api_return(-6, 'User not found');
 
-    // 解析版块的主题分类设置
-    $threadtypes = unserialize($forumfield['threadtypes']);
-    if($threadtypes['required'] && !$typeid) {
-        // 如果版块强制要求分类，但用户没传 typeid
-        api_return(-13, 'Thread type is required for this forum');
-    }
-    
-    // 验证传过来的 typeid 是否属于该版块
-    if($typeid && !isset($threadtypes['types'][$typeid])) {
-        api_return(-13, 'Invalid thread type ID for this forum');
-    }
+$forum = C::t('forum_forum')->fetch($fid);
+if(!$forum || $forum['status'] != 1) api_return(-7, 'Forum invalid');
 
-    $now = time();
-    $newthread = array(
-        'fid' => $fid,
-        'typeid' => $typeid, // 存入分类ID
-        'author' => $member['username'],
-        'authorid' => $uid,
-        'subject' => $subject,
-        'dateline' => $now,
-        'lastpost' => $now,
-        'lastposter' => $member['username'],
-        'status' => 32, 
-    );
-    $tid = C::t('forum_thread')->insert($newthread, true);
+// 3. 插入主题表 (pre_forum_thread)
+$now = TIMESTAMP;
+$new_thread = array(
+    'fid' => $fid,
+    'typeid' => $typeid,
+    'author' => $member['username'],
+    'authorid' => $uid,
+    'subject' => $subject,
+    'dateline' => $now,
+    'lastpost' => $now,
+    'lastposter' => $member['username'],
+    'status' => 32,
+    'attachment' => 0 // 初始值
+);
+$tid = C::t('forum_thread')->insert($new_thread, true);
 
-    $pid = C::t('forum_post_tableid')->insert(array('pid' => null), true);
-    C::t('forum_post')->insert($fid, array(
-        'pid' => $pid, 'fid' => $fid, 'tid' => $tid, 'first' => 1,
-        'author' => $member['username'], 'authorid' => $uid,
-        'subject' => $subject, 'dateline' => $now, 'message' => $message,
-        'useip' => $_G['clientip']
-    ));
+// 4. 插入帖子表 (pre_forum_post)
+$pid = C::t('forum_post_tableid')->insert(array('pid' => null), true);
+$new_post = array(
+    'pid' => $pid, 'fid' => $fid, 'tid' => $tid, 'first' => 1,
+    'author' => $member['username'], 'authorid' => $uid,
+    'subject' => $subject, 'dateline' => $now, 'message' => $message,
+    'useip' => $_G['clientip'], 'attachment' => 0
+);
+C::t('forum_post')->insert($fid, $new_post);
 
-    C::t('forum_forum')->update_forum_counter($fid, 1, 1, 1);
-    C::t('common_member_count')->increase($uid, array('threads' => 1, 'posts' => 1));
-    api_return(0, 'Thread created successfully', array('tid' => $tid, 'typeid' => $typeid));
-    
-    
-    
-    
-    
-    
-} elseif ($action == 'forum_list') {
-    // 1. 联表查询：版块主表 + 详情表
-    $query = DB::query("SELECT f.*, ff.moderators, ff.threadtypes, ff.viewperm, ff.postperm, ff.replyperm, ff.getattachperm, ff.postattachperm, ff.description 
-                        FROM ".DB::table('forum_forum')." f 
-                        LEFT JOIN ".DB::table('forum_forumfield')." ff ON ff.fid=f.fid 
-                        WHERE f.status=1 
-                        ORDER BY f.type ASC, f.displayorder ASC");
-    
-    $groups = array(); 
-    $forums = array(); 
-    
-    while($row = DB::fetch($query)) {
-        // --- A. 解析版主列表 ---
-        $moderators = $row['moderators'] ? explode("\t", trim($row['moderators'])) : array();
+// 5. 【核心】附件认领与正式入库逻辑
+$attachment_type = 0; // 0:无, 1:文件, 2:图片
+$first_aid = 0; // 用于生成封面图
 
-        // --- B. 解析主题分类 (threadtypes) ---
-        $raw_types = unserialize($row['threadtypes']);
-        $threadtypes = array(
-            'required' => isset($raw_types['required']) ? $raw_types['required'] : '0',
-            'listable' => isset($raw_types['listable']) ? $raw_types['listable'] : '0',
-            'types' => isset($raw_types['types']) ? $raw_types['types'] : (object)array()
-        );
+if(preg_match_all("/\[attach(img)?\](\d+)\[\/attach(img)?\]/i", $message, $matches)) {
+    $aids = array_unique(array_map('intval', $matches[2]));
+    if(!empty($aids)) {
+        // 计算 Discuz 标准分表 ID
+        $tableid = $tid % 10;
+        $has_image = false;
 
-        // --- C. 解析权限表 (perms) ---
-        // Discuz 权限存储格式为 "1\t2\t10" (即允许的用户组ID)
-        $perms = array(
-            'view' => $row['viewperm'] ? explode("\t", trim($row['viewperm'])) : array(),
-            'post' => $row['postperm'] ? explode("\t", trim($row['postperm'])) : array(),
-            'reply' => $row['replyperm'] ? explode("\t", trim($row['replyperm'])) : array(),
-            'getattach' => $row['getattachperm'] ? explode("\t", trim($row['getattachperm'])) : array(),
-            'postattach' => $row['postattachperm'] ? explode("\t", trim($row['postattachperm'])) : array()
-        );
-
-        // --- D. 提取最后发表的 200 字摘要 (延续之前的功能) ---
-        $last_summary = '';
-        $last_tid = 0;
-        if($row['lastpost']) {
-            $lp_data = explode("\t", $row['lastpost']);
-            $last_tid = intval($lp_data[0]);
-            if($last_tid) {
-                $last_msg = DB::result_first("SELECT message FROM ".DB::table('forum_post')." WHERE tid=$last_tid AND first=1");
-                if($last_msg) {
-                    $last_msg = preg_replace("/\[attach\]\d+\[\/attach\]/i", '', $last_msg);
-                    $last_msg = preg_replace("/\[.+?\]/is", '', $last_msg);
-                    $last_msg = strip_tags($last_msg);
-                    $last_summary = mb_substr($last_msg, 0, 200, 'utf-8');
-                    if(mb_strlen($last_msg, 'utf-8') > 200) $last_summary .= '...';
+        foreach($aids as $aid) {
+            // A. 从 unused 表提取临时数据
+            $unused = DB::fetch_first("SELECT * FROM ".DB::table('forum_attachment_unused')." WHERE aid=%d AND uid=%d", array($aid, $uid));
+            
+            if($unused) {
+                // B. 插入正式分表 (使用 C::t 确保表名和前缀 100% 正确)
+                $att_data = array(
+                    'aid' => $unused['aid'],
+                    'tid' => $tid,
+                    'pid' => $pid,
+                    'uid' => $uid,
+                    'dateline' => $unused['dateline'],
+                    'filename' => $unused['filename'],
+                    'filesize' => $unused['filesize'],
+                    'attachment' => $unused['attachment'],
+                    'isimage' => $unused['isimage'],
+                    'thumb' => $unused['thumb'],
+                    'remote' => $unused['remote'],
+                    'width' => $unused['width'],
+                );
+                C::t('forum_attachment_n')->insert($tableid, $att_data);
+                
+                // C. 更新索引主表 (把 tableid 从 127 转正)
+                C::t('forum_attachment')->update($aid, array(
+                    'tid' => $tid,
+                    'pid' => $pid,
+                    'tableid' => $tableid
+                ));
+                
+                // D. 清理临时记录
+                DB::delete('forum_attachment_unused', array('aid' => $aid));
+                
+                if($unused['isimage']) {
+                    $has_image = true;
+                    if(!$first_aid) $first_aid = $aid; // 记录第一张图
                 }
             }
         }
+        
+        $attachment_type = $has_image ? 2 : 1;
 
-        // --- E. 组装单条版块数据 ---
-        $forum_info = array(
-            'fid' => $row['fid'],
-            'type' => $row['type'],
-            'name' => $row['name'],
-            'status' => $row['status'],
-            'threads' => $row['threads'],
-            'posts' => $row['posts'],
-            'todayposts' => $row['todayposts'],
-            'lastpost' => $row['lastpost'],
-            'lastposter' => $row['lastposter'],
-            'last_tid' => $last_tid,
-            'last_summary' => $last_summary,
-            'moderators' => $moderators,
-            'threadtypes' => $threadtypes,
-            'perms' => $perms,
-            'fup' => $row['fup']
-        );
-
-        if($row['type'] == 'group') {
-            $forum_info['forums'] = array();
-            $groups[$row['fid']] = $forum_info;
-        } else {
-            $forums[] = $forum_info;
+        // E. 回写附件标志位
+        if($attachment_type > 0) {
+            C::t('forum_thread')->update($tid, array('attachment' => $attachment_type));
+            C::t('forum_post')->update('tid:'.$tid, $pid, array('attachment' => $attachment_type));
+            
+            // F. 如果有图，写入主题封面索引 (让列表页显示预览图)
+            if($first_aid) {
+                $main_attach = C::t('forum_attachment_n')->fetch($tableid, $first_aid);
+                if($main_attach) {
+                    DB::insert('forum_threadimage', array(
+                        'tid' => $tid,
+                        'attachment' => $main_attach['attachment'],
+                        'remote' => $main_attach['remote']
+                    ), false, true);
+                }
+            }
         }
     }
+}
 
-    // --- F. 树状归类 ---
-    $root_list = array();
-    foreach($forums as $f) {
-        if(isset($groups[$f['fup']])) {
-            $groups[$f['fup']]['forums'][] = $f;
-        } else {
-            $root_list[] = $f;
-        }
-    }
-    
-    api_return(0, 'Forum list retrieved successfully', array('list' => array_values($groups)));
+// 6. 更新全局统计
+C::t('forum_forum')->update_forum_counter($fid, 1, 1, 1);
+C::t('common_member_count')->increase($uid, array('threads' => 1, 'posts' => 1));
+
+api_return(0, 'Thread created successfully', array(
+    'tid' => $tid,
+    'pid' => $pid,
+    'attachment_type' => $attachment_type
+));
