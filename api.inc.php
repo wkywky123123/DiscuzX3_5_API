@@ -105,6 +105,47 @@ if(empty($api_key) || $request_key != $api_key) api_return(-2, 'Invalid API key'
 
 $action = isset($_REQUEST['action']) ? trim($_REQUEST['action']) : '';
 
+// ============================================================
+// --- [新增] 安全层：Session/Cookie 与 UID 一致性校验 ---
+// ============================================================
+
+// 1. 定义不需要验证 Cookie 的白名单 Action
+$public_actions = array(
+    'login',            // 登录
+    'register',         // 注册
+    'verify_account',   // 账号验证
+    'forum_list',       // 版块列表 (游客可看)
+    'thread_list',      // 帖子列表 (游客可看)
+    'thread_content',   // 帖子详情 (游客可看)
+    'medal_list'        // 勋章列表
+);
+
+// 2. 获取请求中声称的 UID
+$req_uid = isset($_REQUEST['uid']) ? intval($_REQUEST['uid']) : 0;
+
+// 3. 执行校验逻辑
+// 如果该动作不在白名单内，或者请求中带了特定的 UID (试图以某人身份操作)
+if (!in_array($action, $public_actions) || $req_uid > 0) {
+    
+    // 全局变量 $_G['uid'] 是 Discuz 根据 Cookie 解密出来的真实用户 ID
+    $session_uid = intval($_G['uid']);
+
+    // 核心拦截：
+    // 如果请求参数声称是 uid=X，但 Cookie 解析出来不是 X (可能是0，或者是其他人)
+    if ($req_uid > 0 && $req_uid != $session_uid) {
+        
+        // 细分错误提示，方便调试
+        if ($session_uid == 0) {
+            // 场景：App 传了 uid，但没带 Cookie，或者 Cookie 过期
+            api_return(-99, 'Session expired or not logged in. Please login again.');
+        } else {
+            // 场景：App 传了 uid=1，但 Cookie 是 uid=16 的
+            api_return(-98, 'Security Alert: UID mismatch. You are logged in as UID ' . $session_uid);
+        }
+    }
+}
+// ============================================================
+
 // 【安全防护】严格限制 action 字符，防止目录遍历攻击
 if (!empty($action) && !preg_match('/^[a-z0-9_]+$/i', $action)) {
     api_return(-6, 'Invalid action format');

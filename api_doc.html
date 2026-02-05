@@ -255,8 +255,8 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="nav-group">
         <div class="nav-group-title">基础入门</div>
         <ul>
-            <li><a href="#intro" class="active">概述与身份认证</a></li>
-            <li><a href="#global_error">全局状态码</a></li>
+            <li><a href="#intro" class="active">概述与身份认证 <span class="badge bg-upd">更新</span></a></li></a></li>
+            <li><a href="#global_error">全局状态码 <span class="badge bg-upd">更新</span></a></li>
         </ul>
     </div>
 
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="main-content">
     <div class="header-section">
         <h1>Discuz! API Plugin 接口文档</h1>
-        <p>版本: 2.6 | 最后更新: 2026-1-20 | 基准地址: <code>http://你的域名/plugin.php</code></p>
+        <p>版本: 2.6 | 最后更新: 2026-2-5 | 基准地址: <code>http://你的域名/plugin.php</code></p>
         <p>实时进度：<code><a href="https://todo.mrgeda.top/">https://todo.mrgeda.top/</a></code></p>
         <p>项目仓库：<code><a href="https://github.com/wkywky123123/DiscuzX3_5_API/" target="_blank">https://github.com/wkywky123123/DiscuzX3_5_API/</a></code></p>
     </div>
@@ -355,56 +355,165 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <!-- 概述与身份认证 -->
 <div id="intro" class="section">
-        <h2>概述与身份认证</h2>
-        <div class="api-item">
-            <p>本插件为 Discuz! 开发者提供了一套完整的 RESTful 风格接口。所有接口均需要通过 API Key 进行身份验证。文档中的所有示例均支持跨域调用。</p>
+    <h2>概述与身份认证 <span class="badge bg-upd">安全升级</span></h2>
+    <div class="api-card">
+        <div class="api-body">
+            <p>本插件为 Discuz! 提供了一套 RESTful 风格接口。为了保障社区数据安全，API 采用 <strong>API Key + Session Cookie</strong> 的双重鉴权机制。</p>
             
             <div class="note">
-                <strong>统一调用规范：</strong><br>
-                所有请求必须携带公共参数 <code>id=codeium_api:api</code> 和 <code>key</code>（API密钥）。<br>
-                默认返回 <code>application/json</code> 格式数据，字符编码统一为 <code>UTF-8</code>。
+                <strong>🔐 核心鉴权逻辑 (重要)：</strong><br>
+                1. <strong>网关校验 (API Key)：</strong> 所有请求必须携带 <code>key</code> 参数，校验通过后才允许通过 API 网关。<br>
+                2. <strong>身份校验 (Cookie)：</strong> 涉及用户隐私或写入操作（如发帖、评分、修改资料）时，请求头 <strong>必须</strong> 携带登录后获取的 <code>auth</code> 和 <code>saltkey</code> Cookie。后端会自动比对 <code>Cookie 解析出的 UID</code> 与 <code>请求参数 UID</code> 是否一致，不一致将拒绝服务。<br>
+                3. <strong>特别说明：</strong>由于文档过长，模块过多，模块说明部分不再修改，请在调用时务必遵守此方法（登录，注册，验证账号，勋章列表和未传入UID的板块列表、帖子列表、帖子详情可以不传入cookie）。
             </div>
 
-            <h4>公共参数</h4>
+            <!-- 1. 公共参数 -->
+            <h4>1. 公共参数</h4>
+            <p>所有接口请求均需包含以下参数：</p>
             <table>
-                <thead><tr><th>参数</th><th>类型</th><th>必选</th><th>描述</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>参数</th>
+                        <th>类型</th>
+                        <th>必选</th>
+                        <th>描述</th>
+                    </tr>
+                </thead>
                 <tbody>
-                    <tr><td>id</td><td>String</td><td><span class="required">是</span></td><td>固定值：<code>codeium_api:api</code></td></tr>
-                    <tr><td>key</td><td>String</td><td><span class="required">是</span></td><td>插件后台自定义设置的安全密钥</td></tr>
-                    <tr><td>action</td><td>String</td><td><span class="required">是</span></td><td>具体指令名（如 login, user_list 等）</td></tr>
+                    <tr>
+                        <td>id</td>
+                        <td>String</td>
+                        <td><span class="required">是</span></td>
+                        <td>固定值：<code>codeium_api:api</code></td>
+                    </tr>
+                    <tr>
+                        <td>key</td>
+                        <td>String</td>
+                        <td><span class="required">是</span></td>
+                        <td>插件后台设置的安全密钥。</td>
+                    </tr>
+                    <tr>
+                        <td>action</td>
+                        <td>String</td>
+                        <td><span class="required">是</span></td>
+                        <td>具体的指令名称（如 <code>login</code>, <code>post_rate</code>）。</td>
+                    </tr>
+                    <tr>
+                        <td>uid</td>
+                        <td>Int</td>
+                        <td>否</td>
+                        <td>当前操作用户的 UID。<strong>若传此值，必须带 Cookie。</strong></td>
+                    </tr>
                 </tbody>
             </table>
-            <h4>调用示例</h4>
+
+            <!-- 2. Cookie 规范 -->
+            <h4>2. Cookie 规范</h4>
+            <p>在调用 <code>login</code> 接口成功后，返回数据中包含 <code>cookie_info</code>。后续请求需按以下格式构造 HTTP Header：</p>
+            <div class="endpoint-box">Cookie: [前缀]_auth=xxx; [前缀]_saltkey=xxx;</div>
+            <p style="font-size:0.85rem; color:#ef4444;">⚠️ 注意：<code>auth</code> 值通常包含 <code>+</code> 和 <code>/</code> 等特殊字符，发送前建议进行 URL 编码（如 <code>+</code> 转 <code>%2B</code>），防止传输丢失。</p>
+
+            <!-- 3. Cookie 前缀获取 -->
+            <h4>3. 如何获取 Cookie 前缀？</h4>
+            <p>Cookie 前缀是由 Discuz! 系统随机生成的（如 <code>JoXP_</code>），不同站点各不相同。客户端请勿硬编码前缀。</p>
+            <p><strong>正确获取方式：</strong></p>
+            <ol>
+                <li>调用 <a href="#login">用户登录 (login)</a> 接口。</li>
+                <li>解析返回 JSON 中的 <code>data.cookie_info.prefix</code> 字段。</li>
+                <li>将该前缀缓存到本地，后续请求拼接 Header 时使用：<code>[prefix] + "auth"</code>。</li>
+            </ol>
             <div class="code-container">
-                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp)</div>
+                <div style="margin-bottom: 5px; font-weight: bold; font-size: 0.8rem; color: #64748b;">登录接口返回示例：</div>
                 <pre>
-OkHttpClient client = new OkHttpClient().newBuilder().build();
+{
+    "code": 0,
+    "data": {
+        "uid": 1,
+        "cookie_info": {
+            "prefix": "JoXP_2132_",  // <---这就是前缀
+            "auth": "...",
+            "saltkey": "..."
+        }
+    }
+}</pre>
+            </div>
+
+            <!-- 4. 调用示例 -->
+            <h4>4. 调用示例</h4>
+            <div class="code-container">
+                <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式 (需携带 Cookie):</div>
+                <pre>curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
+     -b "JoXP_auth=a1b2%2Bc3d4...; JoXP_saltkey=x7z8y9" \
+     -d "key=你的API密钥&action=post_rate&uid=1&pid=556"</pre>
+                
+                <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式:</div>
+                <pre>
+// 1. 准备 Cookie (注意 URL 编码)
+String rawAuth = "a1b2+c3d4/e5f6..."; 
+String encodedAuth = URLEncoder.encode(rawAuth, "UTF-8");
+String cookieStr = "JoXP_auth=" + encodedAuth + "; JoXP_saltkey=x7z8y9";
+
+// 2. 构建请求
 Request request = new Request.Builder()
-  .url("http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=...")
-  .method("GET", null)
-  .build();
+    .url("http://你的域名/plugin.php")
+    .addHeader("Cookie", cookieStr) // 注入 Cookie
+    .post(new FormBody.Builder()
+        .add("id", "codeium_api:api")
+        .add("key", "你的API密钥")
+        .add("action", "post_rate")
+        .add("uid", "1")
+        .build())
+    .build();
+
 Response response = client.newCall(request).execute();</pre>
             </div>
         </div>
     </div>
+</div>
 
 <!-- 全局状态码 -->
 <div id="global_error" class="section">
-        <h2>全局状态码</h2>
-        <table>
-            <thead><tr><th>状态码</th><th>含义</th><th>说明</th></tr></thead>
-            <tbody>
-                <tr><td>0</td><td>Success</td><td>请求成功并正确返回数据</td></tr>
-                <tr><td>-1</td><td>Disabled</td><td>API 插件在后台被设置为“关闭”</td></tr>
-                <tr><td>-2</td><td>Invalid Key</td><td>API Key 不匹配或参数缺失</td></tr>
-                <tr><td>-3</td><td>Missing Params</td><td>未提供该动作所需的必要参数</td></tr>
-                <tr><td>-6</td><td>Not Found</td><td>查询的用户、主题或数据不存在</td></tr>
-                <tr><td>-9</td><td>Access Denied</td><td>权限不足（如试图编辑他人的帖子）</td></tr>
-                <tr><td>-13</td><td>Type Required</td><td>版块强制要求主题分类，但未提供 typeid</td></tr>
-            </tbody>
-        </table>
-    </div>
+    <h2>状态码 <span class="badge bg-upd">更新</span></h2>
+    <p>API 返回的 `code` 字段遵循以下规范。建议 App 开发者针对 <strong>-98</strong> 和 <strong>-99</strong> 做强制登出处理。</p>
     
+    <table>
+        <thead><tr><th>状态码</th><th>类别</th><th>含义</th><th>详细说明</th></tr></thead>
+        <tbody>
+            <!-- 成功 -->
+            <tr><td>0</td><td><span class="badge bg-new">成功</span></td><td>Success</td><td>请求成功并正确返回数据。</td></tr>
+            
+            <!-- 基础错误 -->
+            <tr><td>-1</td><td>基础</td><td>Disabled</td><td>API 插件在后台被设置为“关闭”。</td></tr>
+            <tr><td>-2</td><td>基础</td><td>Invalid Key</td><td>API Key 不匹配或参数缺失。</td></tr>
+            <tr><td>-3</td><td>基础</td><td>Missing Params</td><td>请求缺少必要的参数（如 uid, tid, file 等）。</td></tr>
+            
+            <!-- 资源查找 -->
+            <tr><td>-6</td><td>资源</td><td>Not Found</td><td>用户 Not Found、相册不存在等通用资源缺失。</td></tr>
+            <tr><td>-7</td><td>资源</td><td>Invalid Object</td><td>版块关闭、积分类型无效或未启用。</td></tr>
+            <tr><td>-8</td><td>资源</td><td>Thread/Post Error</td><td>帖子/主题不存在、在回收站中或处于审核状态。</td></tr>
+            
+            <!-- 权限与逻辑 -->
+            <tr><td>-9</td><td>权限</td><td>Access Denied</td><td>用户组权限不足、试图操作他人资源（如删别人贴）。</td></tr>
+            <tr><td>-13</td><td>逻辑</td><td>Type Required</td><td>发帖未选择分类（当版块强制要求分类时）。</td></tr>
+            <tr><td>-15</td><td>逻辑</td><td>Operation Limit</td><td>重复操作拦截（如重复点赞、重复申请好友、冷却期内）。</td></tr>
+            
+            <!-- 安全与会话 (新增核心) -->
+            <tr><td>-98</td><td><span class="badge bg-stop">安全</span></td><td>UID Mismatch</td><td><strong>严重：</strong>请求参数中的 <code>uid</code> 与 Cookie 解析出的身份不一致。可能存在越权尝试。</td></tr>
+            <tr><td>-99</td><td><span class="badge bg-stop">安全</span></td><td>Session Expired</td><td><strong>会话失效：</strong>未携带 Cookie 或 Cookie 已过期。App 应跳转登录页。</td></tr>
+            
+            <!-- 上传与系统 -->
+            <tr><td>-10</td><td>系统</td><td>Upload Failed</td><td>上传初始化失败、目录无权限或文件无法保存。</td></tr>
+            <tr><td>-11</td><td>系统</td><td>System Error</td><td>数据库写入失败、物理文件写入失败或邮件发送失败。</td></tr>
+            
+            <!-- 业务特定 -->
+            <tr><td>-18</td><td>业务</td><td>Password Error</td><td>访问加密相册时密码错误。</td></tr>
+            <tr><td>-19</td><td>业务</td><td>Rate Limit</td><td>评分数值超出单次区间或每日总限额。</td></tr>
+            <tr><td>-20</td><td>业务</td><td>No Balance</td><td>账户余额不足以支付当前操作（如扣分、购买附件）。</td></tr>
+            <tr><td>-21</td><td>业务</td><td>Invite Invalid</td><td>注册邀请码无效或已过期。</td></tr>
+            <tr><td>-22</td><td>业务</td><td>IP Banned</td><td>IP 被注册黑名单拦截。</td></tr>
+        </tbody>
+    </table>
+</div>
 <!---------内容管理---------->
     
 <!-- 获取版块列表 -->
@@ -2350,7 +2459,7 @@ Request request = new Request.Builder()
             <div class="code-container">
                 <!-- Curl 示例 -->
                 <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式：</div>
-                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的密钥&action=post_list&tid=1521&uid=1&page=1"</pre>
+                <pre>curl -X GET "http://你的域名/plugin.php?id=codeium_api:api&key=你的API密钥&action=post_list&tid=1521&uid=1&page=1"</pre>
                 
                 <!-- Java 示例 -->
                 <div style="margin-top: 20px; margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Java (OkHttp3) 方式：</div>
@@ -2358,7 +2467,7 @@ Request request = new Request.Builder()
 OkHttpClient client = new OkHttpClient().newBuilder().build();
 HttpUrl url = HttpUrl.parse("http://你的域名/plugin.php").newBuilder()
     .addQueryParameter("id", "codeium_api:api")
-    .addQueryParameter("key", "你的密钥")
+    .addQueryParameter("key", "你的API密钥")
     .addQueryParameter("action", "post_list")
     .addQueryParameter("tid", "1521")
     .addQueryParameter("uid", "1")
@@ -2617,7 +2726,7 @@ public class ReplyPoster {
             <div class="code-container">
                 <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式 (反对/踩):</div>
                 <pre>curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
-     -d "key=你的密钥" \
+     -d "key=你的API密钥" \
      -d "action=post_appraise" \
      -d "uid=1" \
      -d "pid=55621" \
@@ -2627,7 +2736,7 @@ public class ReplyPoster {
                 <pre>
 RequestBody body = new FormBody.Builder()
     .add("id", "codeium_api:api")
-    .add("key", "你的密钥")
+    .add("key", "你的API密钥")
     .add("action", "post_appraise")
     .add("uid", "1")
     .add("pid", "55621")
@@ -4579,7 +4688,7 @@ public class AccountVerifier {
             <div class="code-container">
                 <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.8rem; color: #64748b;">Curl 方式:</div>
                 <pre>curl -X POST "http://你的域名/plugin.php?id=codeium_api:api" \
-     -d "key=你的密钥" \
+     -d "key=你的API密钥" \
      -d "action=register" \
      -d "email=test@example.com"</pre>
                 
@@ -4587,7 +4696,7 @@ public class AccountVerifier {
                 <pre>
 RequestBody body = new FormBody.Builder()
     .add("id", "codeium_api:api")
-    .add("key", "你的密钥")
+    .add("key", "你的API密钥")
     .add("action", "register")
     .add("email", "test@example.com")
     .build();
@@ -5580,7 +5689,7 @@ public class AlbumUploader {
                 <pre>
 RequestBody body = new FormBody.Builder()
     .add("id", "codeium_api:api")
-    .add("key", "你的密钥")
+    .add("key", "你的API密钥")
     .add("action", "edit_album")
     .add("uid", "1")
     .add("albumid", "15")
@@ -6187,13 +6296,6 @@ Request request = new Request.Builder()
         </div>
     </div>
 </div>
-
-
-
-
-
-
-
 
 
 
